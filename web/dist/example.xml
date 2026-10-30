@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz title="选择器示例题库">
+  <question type="multiple_choice" score="1">
+    <text>2 + 2 等于多少？</text>
+    <option id="A">3</option>
+    <option id="B">4</option>
+    <option id="C">5</option>
+    <option id="D">6</option>
+    <answer>B</answer>
+    <explanation>2 + 2 = 4。</explanation>
+  </question>
+  <question type="multiple_choice" score="1">
+    <text>以下哪些数字是偶数？</text>
+    <option id="A">2</option>
+    <option id="B">3</option>
+    <option id="C">4</option>
+    <option id="D">5</option>
+    <answer>A,C</answer>
+    <explanation>2 和 4 都是偶数。多选题必须选全且不能多选。</explanation>
+  </question>
+  <question type="multiple_choice" score="1">
+    <text>地球是一颗行星。</text>
+    <option id="T">正确</option>
+    <option id="F">错误</option>
+    <answer>T</answer>
+    <explanation>地球是太阳系中的行星。</explanation>
+  </question>
+</quiz>

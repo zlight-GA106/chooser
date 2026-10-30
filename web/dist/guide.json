@@ -1,0 +1,52 @@
+{
+  "Title": "题库 XML 写作指南",
+  "Version": "1.4.0",
+  "ExampleFile": "example.xml",
+  "Sections": [
+    {
+      "Title": "1. 创建一个 XML 题库",
+      "Text": "用纯文本编辑器新建文件，以 UTF-8 编码保存为 .xml。根节点必须是 <quiz>，每道题使用一个 <question>。点击“下载示例 XML”可得到一份包含单选、多选和判断题的完整题库，修改后即可导入。",
+      "Code": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<quiz title=\"我的题库\">\n  <question type=\"multiple_choice\" score=\"1\">\n    <text>2 + 2 等于多少？</text>\n    <option id=\"A\">3</option>\n    <option id=\"B\">4</option>\n    <answer>B</answer>\n    <explanation>2 + 2 = 4。</explanation>\n  </question>\n</quiz>"
+    },
+    {
+      "Title": "2. 题库名称与题干",
+      "Text": "<quiz> 的 title 属性可选；不填写时使用 XML 文件名作为题库名。每题必须有非空的 <text> 题干，也可使用兼容标签 <prompt>。推荐统一使用 type=\"multiple_choice\"；单选、多选和 T/F 判断题都使用这个类型，程序根据正确答案和选项判断显示方式。题号按文件内的题目顺序从 1 开始生成，无需手写题号属性。",
+      "Code": "<quiz title=\"计算机基础\">\n  <question type=\"multiple_choice\">\n    <text>题目正文写在这里。</text>\n    <!-- 继续填写选项与答案 -->\n  </question>\n</quiz>"
+    },
+    {
+      "Title": "3. 编写选项",
+      "Text": "每题至少两个非空的 <option>。每个选项必须有唯一、非空的 id，常用 A、B、C、D，也支持 T/F 或自定义编号。导入时 id 与答案不区分大小写。id 不要包含空格、逗号、分号、顿号、斜线、竖线或加号等答案分隔符。不要在同一道题里重复使用相同 id。",
+      "Code": "<option id=\"A\">选项一</option>\n<option id=\"B\">选项二</option>\n<option id=\"C\">选项三</option>\n<option id=\"D\">选项四</option>"
+    },
+    {
+      "Title": "4. 单选与多选答案",
+      "Text": "<answer> 填选项 id，不能填选项正文。单选如 B；多选推荐写 A,C，也支持单字符 id 连写 AC。自定义多字符 id 应使用逗号分隔，例如 ITEM1,ITEM3。所有答案必须完整匹配已有选项。多选按集合完全一致判分，漏选、多选均不得分。",
+      "Code": "<!-- 单选 -->\n<answer>B</answer>\n\n<!-- 多选：两种写法等价 -->\n<answer>A,C</answer>\n<answer>AC</answer>"
+    },
+    {
+      "Title": "5. 判断题",
+      "Text": "判断题使用两个选项 T 和 F，并在 <answer> 填写正确选项的 id。不要只在题干里写“正确 / 错误”而省略选项。",
+      "Code": "<question type=\"multiple_choice\">\n  <text>地球是一颗行星。</text>\n  <option id=\"T\">正确</option>\n  <option id=\"F\">错误</option>\n  <answer>T</answer>\n</question>"
+    },
+    {
+      "Title": "6. 可选解析与每题分值",
+      "Text": "可以加入 <explanation>，兼容标签为 <analysis>。未填写解析也能正常答题。开启“显示答案”时会展示答案与解析；开启“立即评分”时提交后展示本题得分。所有题目固定每题 1 分，XML 的 score 属性不会改变计分；建议写 score=\"1\" 或直接省略。暂不支持填空题。",
+      "Code": "<answer>B</answer>\n<explanation>这里说明为什么 B 正确。</explanation>"
+    },
+    {
+      "Title": "7. 特殊字符、CDATA 与编码",
+      "Text": "正文中的 & 写成 &amp;，小于号 < 写成 &lt;，大于号可写成 &gt;。属性值使用双引号时，内部双引号写成 &quot;；单引号可写成 &apos;。也可用 CDATA 包住包含大量特殊字符的题干或解析，但内容中不能直接包含 CDATA 的结束标记 ]]>。优先使用 UTF-8，文件实际编码应与 XML 声明一致。",
+      "Code": "<text>判断：3 &lt; 5 且 A &amp; B 有意义。</text>\n\n<!-- 与上面的转义方式二选一 -->\n<text><![CDATA[判断：3 < 5 且 A & B 有意义。]]></text>"
+    },
+    {
+      "Title": "8. 导入前检查",
+      "Text": "检查根节点是否为 <quiz>；每道题是否有题干、至少两个选项及有效答案；选项 id 是否重复；开始与结束标签是否配对；& 等特殊字符是否转义；文件是否保存为真正的 .xml 而非 .xml.txt。导入报错会指出题号，格式损坏时还会尽量提示 XML 行号。只要有不合法题目，整个文件会拒绝导入，修正后重新导入即可。",
+      "Code": null
+    },
+    {
+      "Title": "9. 文件安全与保存",
+      "Text": "禁止在题库中使用 DTD、自定义实体或外部实体，也不要填写外部资源地址来引用题目。单个 XML 最多支持 32 MB。导入后题库和记录保存在当前设备；网页使用当前浏览器缓存，单文件版使用本机缓存。相同内容重复导入会使用已有题库；内容不同但同名的题库会分别保留。重要记录请在“管理题库”备份。",
+      "Code": null
+    }
+  ]
+}

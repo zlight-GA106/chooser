@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>选择器核心浏览器验证</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font:16px/1.7 sans-serif;padding:20px;background:#f0f4f8;color:#172338}pre{white-space:pre-wrap}</style></head>
+<body><h1>选择器核心浏览器验证</h1><pre id="results">正在验证…</pre><script src="../dist/core.js"></script><script>
+(function () {
+  'use strict';
+  var C = window.ChooserCore, results = window.__CORE_TEST_RESULTS__ = { done: false, passed: 0, failures: [], tests: [] };
+  function check(value, message) { if (!value) throw new Error(message); }
+  function reject(body) { var rejected = false; try { body(); } catch (e) { rejected = true; } check(rejected, '非法输入未被拒绝'); }
+  function test(name, body) { try { body(); results.passed++; results.tests.push('PASS ' + name); } catch (e) { results.failures.push(name + ': ' + e.message); results.tests.push('FAIL ' + name + ': ' + e.message); } }
+  function finish() { results.done = true; document.getElementById('results').textContent = JSON.stringify(results, null, 2); }
+  var request = new XMLHttpRequest(); request.open('GET', '../dist/default.xml', true);
+  request.onerror = function () { results.failures.push('无法读取默认 XML'); finish(); };
+  request.onload = function () {
+    if (request.status !== 200) { results.failures.push('读取默认 XML 失败：' + request.status); finish(); return; }
+    var xml = request.responseText, sample;
+    test('真实 XML 共 196 题，161 道四选项题和 35 道 T/F 判断题', function () {
+      sample = C.parseXml(xml, '2025新版大信_选择题.xml');
+      check(sample.Questions.length === 196, '题数不是 196');
+      check(sample.Questions.filter(function (q) { return q.Options.length === 4; }).length === 161, '四选项题数不是 161');
+      check(sample.Questions.filter(function (q) { return q.Options.length === 2 && q.Options[0].Id === 'T'; }).length === 35, 'T/F 题数不是 35');
+      results.bankId = sample.Id;
+    });
+    test('题库和题目标识与桌面版 SHA-256 一致，改文件名不重复导入', function () {
+      check(sample.Id === 'cdc6f7f8877b83434e6773f71ea56d57a0ef3db865c8e99ed249f50a091e643f', '题库哈希与桌面版不符');
+      check(sample.Questions[0].Id === '59ff9364479255528df36457af6910d665906f056a7f4ef12ee3803b769f92b4', '首题哈希与桌面版不符');
+      check(C.parseXml(xml, '改名.xml').Id === sample.Id, '改名后 ID 改变');
+    });
+    var fixture = '<quiz title="验证"><question score="99"><text>单选</text><option id="A">甲</option><option id="B">乙</option><answer>B</answer></question><question><prompt>多选</prompt><option id="A">甲</option><option id="B">乙</option><option id="C">丙</option><answer>AC</answer><analysis>解析</analysis></question><question><text>判断</text><option id="T">正确</option><option id="F">错误</option><answer>T</answer></question></quiz>';
+    test('单选、多选和判断提交后立即评分；固定每题 1 分且最终反馈可恢复', function () {
+      var b = C.parseXml(fixture, 'test.xml'), s = C.createState(); s.Banks.push(b); s.ImmediateScoring = true; s.ShowAnswers = true; s.Active = C.createSession(b, 1, 3, 3, false);
+      s.Active.Draft = ['A']; C.submit(s, b); check(s.Active.FeedbackPending && s.Wrongs[0].Count === 1, '未显示错题反馈');
+      reject(function () { C.submit(s, b); }); C.advance(s);
+      s.Active.Draft = ['C','A']; C.submit(s, b); C.advance(s); s.Active.Draft = ['T']; C.submit(s, b);
+      check(C.score(s.Active) === 2, '总分不是 2/3'); check(s.Active.Completed && s.Active.FeedbackPending, '末题反馈丢失');
+      s = C.validateState(JSON.parse(JSON.stringify(s))); check(C.current(s.Banks[0], s.Active).Number === 3, '重开丢失末题反馈');
+      C.advance(s); check(s.Active.Completed && !s.Active.FeedbackPending && s.Wrongs[0].Count === 1, '下一题重复累计或未结束');
+    });
+    test('紧连多选、任意选项 ID、相同重复题独立编号', function () {
+      var b = C.parseXml(fixture, 'test.xml'); check(b.Questions[1].Answers.join(',') === 'A,C' && b.Questions[2].Answers[0] === 'T', '答案解析错误');
+      b = C.parseXml('<quiz><question><text>x</text><option id="YES">是</option><option id="NO">否</option><answer>YES</answer></question></quiz>', 'yes.xml'); check(b.Questions[0].Answers[0] === 'YES', '任意 ID 不支持');
+      var q = '<question><text>x</text><option id="A">甲</option><option id="B">乙</option><answer>A</answer></question>';
+      b = C.parseXml('<quiz>' + q + q + '</quiz>', 'same.xml'); check(b.Questions[1].Id === b.Questions[0].Id + '-2', '重复题 ID 冲突');
+    });
+    test('DTD、实体声明、格式损坏、缺少答案和非法选项全部拒绝', function () {
+      reject(function () { C.parseXml('<!DOCTYPE quiz [<!ENTITY x SYSTEM "file:///etc/passwd">]><quiz/>', 'bad.xml'); });
+      reject(function () { C.parseXml('<quiz><question></quiz>', 'bad.xml'); });
+      reject(function () { C.parseXml(fixture.replace('<answer>B</answer>', '<answer>Z</answer>'), 'bad.xml'); });
+      reject(function () { C.parseXml(fixture.replace('<answer>B</answer>', ''), 'bad.xml'); });
+      reject(function () { C.parseXml(fixture.replace('id="B"', 'id="A"'), 'bad.xml'); });
+    });
+    test('旧版桌面备份缺少新选项时默认为关闭，题库仍有效', function () {
+      var old = {Banks: [sample], Wrongs: [], Active: null}; C.validateState(old); check(old.ShowAnswers === false && old.ImmediateScoring === false, '旧版选项默认值错误');
+      var exported = C.parseXml(sample.Xml, 'roundtrip.xml'); check(exported.Id === sample.Id, 'UTF-8 导出重导入改变题库');
+    });
+    finish();
+  };
+  request.send();
+}());
+</script></body></html>

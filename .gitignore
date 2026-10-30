@@ -1,0 +1,37 @@
+# Build outputs are distributed through GitHub Releases.
+*.exe
+*.pdb
+*.zip
+*.tar.gz
+/选择器Go服务端v*-Linux-*
+
+# Local hosting / nested checkout metadata; never publish Site credentials.
+.openai/
+.sites-runtime/
+.sites-checkout/
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Runtime data and test-generated output.
+*.log
+/tests/*.txt
+/tests/*.png
+/tests/screenshots/
+/tests/*验收记录.md
+/tests/*data*/
+/tests/*-state.json
+/tests/standalone-run.json
+/web/tests/*-report.*
+/web/tests/screenshots/
+/web/tests/*-state.json
+/web/tests/*data*/
+state.json
+state.json.bak
+
+# Editor and OS files.
+.vs/
+.vscode/
+Thumbs.db
+.DS_Store

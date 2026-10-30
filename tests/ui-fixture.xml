@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz title="界面验收 · 单选 / 多选 / 判断">
+  <question score="99" type="multiple_choice">
+    <text>单选验收：2 + 2 等于多少？</text>
+    <option id="A">3</option><option id="B">4</option><option id="C">5</option><option id="D">6</option>
+    <answer>B</answer><explanation>2 + 2 = 4。本题无论 XML 分值如何都只计 1 分。</explanation>
+  </question>
+  <question type="multiple_choice">
+    <text>多选验收：以下哪些数字是偶数？</text>
+    <option id="A">2</option><option id="B">3</option><option id="C">4</option><option id="D">5</option>
+    <answer>AC</answer><analysis>2 和 4 是偶数。多选按集合完全相等判分。</analysis>
+  </question>
+  <question type="multiple_choice"><text>判断验收：地球是行星。</text><option id="T">正确</option><option id="F">错误</option><answer>T</answer></question>
+</quiz>

@@ -1,0 +1,1527 @@
+<?xml version="1.0" encoding="UTF-8"?><quiz>
+    <question score="1" type="multiple_choice">
+        <text>在数据通信系统中，衡量单位时间内传输的数据量的核心
+        指标是______。</text>
+        <option id="A">误码率</option>
+        <option id="B">传输速率（bps）</option>
+        <option id="C">带宽</option>
+        <option id="D">延迟</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机网络按覆盖范围分类，覆盖范围最大的是
+        ______。</text>
+        <option id="A">局域网</option>
+        <option id="B">城域网</option>
+        <option id="C">广域网</option>
+        <option id="D">个人区域网</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列网络互联设备中，工作在OSI参考模型第三层（网络
+        层）的是______。</text>
+        <option id="A">集线器</option>
+        <option id="B">交换机</option>
+        <option id="C">路由器</option>
+        <option id="D">中继器</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在计算机网络中，IP地址的作用是______。</text>
+        <option id="A">标识网络中的一个设备</option>
+        <option id="B">加密通信数据</option>
+        <option id="C">提供电源</option>
+        <option id="D">显示网页内容</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>域名系统（DNS）的主要功能是______。</text>
+        <option id="A">将域名解析为IP地址</option>
+        <option id="B">提供网页内容</option>
+        <option id="C">加密网络通信</option>
+        <option id="D">分配IP地址</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于互联网典型应用的是______。</text>
+        <option id="A">网页浏览</option>
+        <option id="B">文字处理</option>
+        <option id="C">电子表格计算</option>
+        <option id="D">图像编辑</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>防火墙技术的主要作用是______。</text>
+        <option id="A">提高计算机运行速度</option>
+        <option id="B">防止外部非法访问内部网络</option>
+        <option id="C">管理计算机文件</option>
+        <option id="D">提供网络连接</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>无线局域网（WLAN）通常采用的标准是______。</text>
+        <option id="A">蓝牙</option>
+        <option id="B">NFC</option>
+        <option id="C">IEEE 802.11</option>
+        <option id="D">5G</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>使用ping命令可以测试______。</text>
+        <option id="A">计算机的CPU速度</option>
+        <option id="B">网络连通性</option>
+        <option id="C">硬盘读写速度</option>
+        <option id="D">显示器的分辨率</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机病毒是一种______。</text>
+        <option id="A">生物病毒</option>
+        <option id="B">恶意的程序代码</option>
+        <option id="C">硬件故障</option>
+        <option id="D">操作系统错误</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在计算机网络中，TCP协议工作在OSI参考模型的______
+        层。</text>
+        <option id="A">应用层</option>
+        <option id="B">传输层</option>
+        <option id="C">网络层</option>
+        <option id="D">数据链路层</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>加密技术的主要目的是______。</text>
+        <option id="A">提高网络速度</option>
+        <option id="B">保障数据传输和存储的机密性和安全性</option>
+        <option id="C">增加数据量</option>
+        <option id="D">简化网络结构</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在文字处理软件中，将文档中所有"计算机"一词替换为"电
+        脑"，应使用______功能。</text>
+        <option id="A">格式刷</option>
+        <option id="B">查找替换</option>
+        <option id="C">样式</option>
+        <option id="D">页眉页脚</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在文档中，脚注和尾注的主要作用是______。</text>
+        <option id="A">添加页眉</option>
+        <option id="B">标注引用信息的出处</option>
+        <option id="C">插入图片</option>
+        <option id="D">设置页边距</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于矢量图格式的是______。</text>
+        <option id="A">JPG</option>
+        <option id="B">PNG</option>
+        <option id="C">SVG</option>
+        <option id="D">BMP</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>矢量图与位图相比，矢量图的主要优势是______。</text>
+        <option id="A">色彩丰富</option>
+        <option id="B">文件体积小</option>
+        <option id="C">放大不失真</option>
+        <option id="D">适合照片存储</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在图像处理中，RGB色彩空间中的R、G、B分别代表
+        ______。</text>
+        <option id="A">红、绿、蓝</option>
+        <option id="B">黄、绿、蓝</option>
+        <option id="C">红、黄、蓝</option>
+        <option id="D">红、绿、紫</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>使用AI图像生成工具时，输入描述性文本生成图像的技术
+        属于______。</text>
+        <option id="A">文本到图像生成</option>
+        <option id="B">图像到图像转换</option>
+        <option id="C">图像风格迁移</option>
+        <option id="D">图像超分辨率</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数字音频处理中，"量化"是指______。</text>
+        <option id="A">对音频信号按时间采样</option>
+        <option id="B">将采样后的幅值离散化为有限个数值</option>
+        <option id="C">压缩音频文件</option>
+        <option id="D">增加音频音量</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数字音频采样率越高，则______。</text>
+        <option id="A">音质越差，文件越小</option>
+        <option id="B">音质越好，文件越大</option>
+        <option id="C">音质不变，文件变小</option>
+        <option id="D">音质变差，文件变大</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>视频压缩编码标准H.264的主要作用是______。</text>
+        <option id="A">增加视频清晰度</option>
+        <option id="B">减少视频文件存储空间和传输带宽</option>
+        <option id="C">转换视频格式</option>
+        <option id="D">添加视频字幕</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在图像处理中，将多张照片合成为一张全景图，其核心操
+        作涉及______。</text>
+        <option id="A">图层操作</option>
+        <option id="B">色彩调整</option>
+        <option id="C">滤镜效果</option>
+        <option id="D">文字编辑</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Word文字中，若要为文档各级标题应用统一格式
+        并自动生成目录，应首先使用______功能。</text>
+        <option id="A">样式</option>
+        <option id="B">页眉页脚</option>
+        <option id="C">文本框</option>
+        <option id="D">艺术字</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在文字处理软件中，格式刷的作用是______。</text>
+        <option id="A">复制文字内容</option>
+        <option id="B">复制格式</option>
+        <option id="C">删除格式</option>
+        <option id="D">粘贴内容</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于AI在语音处理中应用的是______。</text>
+        <option id="A">语音合成</option>
+        <option id="B">图像识别</option>
+        <option id="C">视频剪辑</option>
+        <option id="D">文字排版</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在图像处理中，图层蒙版的主要作用是______。</text>
+        <option id="A">合并图层</option>
+        <option id="B">控制图层不同区域的显示与隐藏</option>
+        <option id="C">改变图层颜色</option>
+        <option id="D">添加文字</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/WORD文字中，邮件合并功能主要用于______。</text>
+        <option id="A">合并多个文档</option>
+        <option id="B">批量生成内容格式相同但数据不同的文档</option>
+        <option id="C">合并表格</option>
+        <option id="D">合并图片</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在演示文稿中，能够一次性全局修改所有幻灯片的
+        Logo、背景和字体风格的设置是______。</text>
+        <option id="A">动画窗格</option>
+        <option id="B">幻灯片母版</option>
+        <option id="C">切换效果</option>
+        <option id="D">排练计时</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在演示文稿中，为幻灯片中的对象添加进入、强调或退出
+        效果，应使用______功能。</text>
+        <option id="A">切换</option>
+        <option id="B">动画</option>
+        <option id="C">超链接</option>
+        <option id="D">幻灯片放映</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列工具中，最适合制作结构化的产品演示汇报的是
+        ______。</text>
+        <option id="A">记事本</option>
+        <option id="B">演示文稿软件（如PowerPoint）</option>
+        <option id="C">计算器</option>
+        <option id="D">画图工具</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>利用AIGC工具根据关键词自动生成演示文稿草稿，属于
+        ______功能。</text>
+        <option id="A">拼写检查</option>
+        <option id="B">自动美化</option>
+        <option id="C">基于AI的演示文稿生成</option>
+        <option id="D">自动翻译</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>HTML中，用于定义超链接的标签是______。</text>
+        <option id="A">&lt;a&gt;</option>
+        <option id="B">&lt;link&gt;</option>
+        <option id="C">&lt;href&gt;</option>
+        <option id="D">&lt;url&gt;</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>根据微信公众号的运营策略，以下关于提升公众号用户活
+        跃度和留存率的做法中，最全面的是______</text>
+        <option id="A">每天推送大量文字信息，确保信息密度足够
+        大</option>
+        <option id="B">仅使用视频和图片形式展示信息，避免文字
+        阅读疲劳</option>
+        <option id="C">提前规划内容保持连贯有序，采用图文、语
+        音、视频等多种形式差异化推送，并积极与
+        用户互动、关注后台数据</option>
+        <option id="D">只关注订阅数量增长，忽略用户的留言和评
+        论等反馈</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>Markdown语法中，使用"#"符号表示______。</text>
+        <option id="A">加粗</option>
+        <option id="B">标题</option>
+        <option id="C">列表</option>
+        <option id="D">引用</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在网页制作中，用于收集用户输入信息（如文本、选项）
+        的HTML元素是______。</text>
+        <option id="A">表格</option>
+        <option id="B">表单</option>
+        <option id="C">超链接</option>
+        <option id="D">图像</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在演示文稿中，为幻灯片之间的切换设置动态效果，应使
+        用______功能。</text>
+        <option id="A">动画</option>
+        <option id="B">切换</option>
+        <option id="C">超链接</option>
+        <option id="D">母版</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在演示文稿中，使用"超链接"功能可以实现______。</text>
+        <option id="A">修改幻灯片背景</option>
+        <option id="B">跳转到其他幻灯片、文件或网页</option>
+        <option id="C">自动播放幻灯片</option>
+        <option id="D">切换幻灯片主题</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算思维的核心要素包括分解、模式识别、抽象和
+        ______。</text>
+        <option id="A">编写程序</option>
+        <option id="B">算法设计</option>
+        <option id="C">数据分析</option>
+        <option id="D">网络分享</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，最符合计算思维中"分解"思想的是
+        ______。</text>
+        <option id="A">将一个大问题划分为若干小问题</option>
+        <option id="B">找出不同问题的相似之处</option>
+        <option id="C">忽略不重要的细节</option>
+        <option id="D">设计解决问题的步骤</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在算法设计中，"迭代"是指______。</text>
+        <option id="A">将问题分解为子问题</option>
+        <option id="B">重复执行操作，用本次结果作为下一次的输
+        入，逐步求得问题解</option>
+        <option id="C">在不同的解决方案中选择最优</option>
+        <option id="D">从已知条件推导出结果</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>通过大语言模型辅助生成代码，使用者需要具备的主要能
+        力是______。</text>
+        <option id="A">精通所有编程语言</option>
+        <option id="B">准确描述任务需求和设计提示词</option>
+        <option id="C">自己编写所有代码</option>
+        <option id="D">手动调试所有代码</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>程序设计中的三大基本控制结构是顺序结构、选择结构和
+        ______。</text>
+        <option id="A">循环结构</option>
+        <option id="B">递归结构</option>
+        <option id="C">并行结构</option>
+        <option id="D">分布式结构</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在Python中，用于定义函数的关键字是______。</text>
+        <option id="A">define</option>
+        <option id="B">def</option>
+        <option id="C">function</option>
+        <option id="D">func</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算思维的本质是______。</text>
+        <option id="A">让计算机代替人类思考</option>
+        <option id="B">抽象和自动化</option>
+        <option id="C">学习编程语言</option>
+        <option id="D">使用各种软件工具</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大模型是指______。</text>
+        <option id="A">规模很大、包含了千万行代码的编程软件</option>
+        <option id="B">在大规模数据上训练、具有海量参数，具备
+        涌现能力的深度学习模型</option>
+        <option id="C">大型计算机硬件</option>
+        <option id="D">大型数据库系统</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>代码管理工具Git的核心功能是______。</text>
+        <option id="A">编写代码和协作</option>
+        <option id="B">版本控制和协作</option>
+        <option id="C">编译代码和调试程序</option>
+        <option id="D">调试程序和版本控制</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在Python中，列表（list）属于______。</text>
+        <option id="A">基本数据类型</option>
+        <option id="B">数据容器</option>
+        <option id="C">控制结构</option>
+        <option id="D">函数</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据的基本特征"4V"（海量、快速、多样、价值）中，表示数据类型多样性的V是______。</text>
+        <option id="A">Volume</option>
+        <option id="B">Velocity</option>
+        <option id="C">Variety</option>
+        <option id="D">Value</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据思维的核心特征之一是______。</text>
+        <option id="A">追求绝对的精确性</option>
+        <option id="B">接受数据的混杂性，挖掘整体趋势</option>
+        <option id="C">使用小样本数据</option>
+        <option id="D">仅依赖抽样分析</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>使用Python的requests库和BeautifulSoup库进行网页数据爬取时，requests库主要用于______。</text>
+        <option id="A">解析HTML标签</option>
+        <option id="B">发送HTTP请求获取网页内容</option>
+        <option id="C">存储数据</option>
+        <option id="D">可视化数据</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据清洗过程中，处理缺失值的方法不包括______。</text>
+        <option id="A">删除含有缺失值的记录</option>
+        <option id="B">用均值或中位数填充缺失值</option>
+        <option id="C">直接忽略缺失值不做任何处理</option>
+        <option id="D">虚构随机数据</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/EXCEL表格中，若单元格A1的值为10，A2的值为20，A3的值为30，则公式=SUM(A1:A3)的结果是______。</text>
+        <option id="A">50</option>
+        <option id="B">60</option>
+        <option id="C">100</option>
+        <option id="D">200</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在Excel/WPS表格中，单元格引用"$B$2"属于______。</text>
+        <option id="A">相对引用</option>
+        <option id="B">绝对引用</option>
+        <option id="C">混合引用</option>
+        <option id="D">三维引用</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在电子表格中，IF函数的作用是______。</text>
+        <option id="A">求和</option>
+        <option id="B">根据条件判断并返回不同值</option>
+        <option id="C">计算平均值</option>
+        <option id="D">排序</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据可视化的主要目的是______。</text>
+        <option id="A">增加数据量</option>
+        <option id="B">以图表形式直观呈现数据中的信息和趋势</option>
+        <option id="C">替代原始数据</option>
+        <option id="D">隐藏数据细节</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列图表类型中，最适合展示数据随时间变化趋势的是______。</text>
+        <option id="A">饼图</option>
+        <option id="B">折线图</option>
+        <option id="C">雷达图</option>
+        <option id="D">散点图</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/EXCEL表格中，对数据进行排序时，若想按某一列的值从大到小排列，应选择______。</text>
+        <option id="A">升序</option>
+        <option id="B">降序</option>
+        <option id="C">条件格式</option>
+        <option id="D">自动筛选</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在电子表格中，条件格式的主要作用是______。</text>
+        <option id="A">修改单元格数据</option>
+        <option id="B">根据条件自动设置单元格的格式</option>
+        <option id="C">计算单元格的值</option>
+        <option id="D">保护单元格</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/EXCEL表格中，RANK函数的作用是______。</text>
+        <option id="A">计算总和</option>
+        <option id="B">对数据进行排名</option>
+        <option id="C">计算平均值</option>
+        <option id="D">统计个数</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据是指______。</text>
+        <option id="A">大量数据的简单堆积</option>
+        <option id="B">需要新处理模式才能具有更强决策力的海量、高增长率和多样化的信息资产</option>
+        <option id="C">传统数据库能处理的所有数据</option>
+        <option id="D">仅指结构化数据</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据技术的核心意义在于______。</text>
+        <option id="A">掌握庞大的数据信息</option>
+        <option id="B">对含有意义的数据进行专业化处理，实现数据增值</option>
+        <option id="C">尽可能多地存储数据</option>
+        <option id="D">购买昂贵的硬件设备</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据的"5V"特征中，表示数据增长速度快、处理速度也快的是______。</text>
+        <option id="A">Volume</option>
+        <option id="B">Variety</option>
+        <option id="C">Velocity</option>
+        <option id="D">Veracity</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据量由小到大的增长过程中，会涌现出原本在独立的小数据中没有的信息和规律，这种现象称为______。</text>
+        <option id="A">数据溢出</option>
+        <option id="B">数据涌现</option>
+        <option id="C">数据膨胀</option>
+        <option id="D">数据聚合</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据5V特征中，Veracity（准确性）是指______。</text>
+        <option id="A">数据量大</option>
+        <option id="B">数据类型多样</option>
+        <option id="C">数据的准确性和可信赖度</option>
+        <option id="D">数据增长速度快</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据中非结构化数据的主要表现形式不包括______。</text>
+        <option id="A">网络日志</option>
+        <option id="B">音频视频</option>
+        <option id="C">关系数据库表</option>
+        <option id="D">地理位置信息</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>谷歌公司早于世界卫生组织预测甲型H1N1流感传播的事件，标志着______。</text>
+        <option id="A">人工智能时代的到来</option>
+        <option id="B">大数据时代的序幕正式拉开</option>
+        <option id="C">物联网的普及</option>
+        <option id="D">云计算的应用</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据时代需要具备的思维被称为______。</text>
+        <option id="A">算法思维</option>
+        <option id="B">数据思维</option>
+        <option id="C">大数据思维</option>
+        <option id="D">编程思维</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据支撑技术中，负责将不同来源的数据合并到一个统一存储中的过程称为______。</text>
+        <option id="A">数据采集</option>
+        <option id="B">数据集成</option>
+        <option id="C">数据归约</option>
+        <option id="D">数据清洗</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据归约的主要目的是______。</text>
+        <option id="A">增加数据量</option>
+        <option id="B">减少数据集大小或复杂性，同时保留有用信息</option>
+        <option id="C">提高数据可视化效果</option>
+        <option id="D">增加数据存储成本</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>依据大数据相关定义，大数据的起始计量单位至少是______。</text>
+        <option id="A">GB</option>
+        <option id="B">TB</option>
+        <option id="C">PB</option>
+        <option id="D">EB</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据获取的常见来源不包括______。</text>
+        <option id="A">企业交易数据</option>
+        <option id="B">用户行为数据</option>
+        <option id="C">传感器数据</option>
+        <option id="D">人工凭空生成</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>网页信息爬取中，用于发送HTTP请求获取网页内容的Python库是______。</text>
+        <option id="A">BeautifulSoup</option>
+        <option id="B">Pandas</option>
+        <option id="C">Requests</option>
+        <option id="D">Matplotlib</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>通过API获取数据通常比使用爬虫的优势是______。</text>
+        <option id="A">更慢但更稳定</option>
+        <option id="B">更高效和准确，返回格式易于解析</option>
+        <option id="C">不需要网络连接</option>
+        <option id="D">可以获取任何数据</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据清洗的主要目的是______。</text>
+        <option id="A">提高数据分析的速度</option>
+        <option id="B">提升数据的准确性和一致性</option>
+        <option id="C">增加数据集的大小</option>
+        <option id="D">降低存储数据的成本</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据清洗的第一步是______。</text>
+        <option id="A">数据验证</option>
+        <option id="B">数据清洗</option>
+        <option id="C">数据审查</option>
+        <option id="D">数据集成</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，不属于数据清洗中处理缺失值常用方法的是______。</text>
+        <option id="A">删除含有缺失值的记录</option>
+        <option id="B">用均值填补缺失值</option>
+        <option id="C">用插值法填补</option>
+        <option id="D">凭空编造数据</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据验证的主要目的是______。</text>
+        <option id="A">增加数据量</option>
+        <option id="B">确保数据清洗结果符合预期</option>
+        <option id="C">加快分析速度</option>
+        <option id="D">删除所有数据</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据脱敏的主要作用是______。</text>
+        <option id="A">提高数据可视化效果</option>
+        <option id="B">保护个人隐私和遵守数据保护法规</option>
+        <option id="C">增加数据复杂性</option>
+        <option id="D">减少数据存储空间</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，单元格的数据类型不包括______。</text>
+        <option id="A">文本型数据</option>
+        <option id="B">数值型数据</option>
+        <option id="C">公式型数据</option>
+        <option id="D">图像型数据</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，要对单元格的字体、颜色、边框等进行设置，应使用______功能。</text>
+        <option id="A">单元格格式化</option>
+        <option id="B">排序</option>
+        <option id="C">筛选</option>
+        <option id="D">数据透视表</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，AVERAGE函数的功能是______。</text>
+        <option id="A">求和</option>
+        <option id="B">计算平均值</option>
+        <option id="C">计数</option>
+        <option id="D">求最大值</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，COUNT函数用于______。</text>
+        <option id="A">计算数值个数</option>
+        <option id="B">计算总和</option>
+        <option id="C">计算平均值</option>
+        <option id="D">求最大值</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，MAX函数的功能是______。</text>
+        <option id="A">计算总和</option>
+        <option id="B">计算平均值</option>
+        <option id="C">求最大值</option>
+        <option id="D">求最小值</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，数据透视表的主要作用是______。</text>
+        <option id="A">制作图表</option>
+        <option id="B">对大量数据进行快速汇总和分析</option>
+        <option id="C">输入数据</option>
+        <option id="D">设置单元格格式</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列图表中，最适合展示各类别数据之间的比例关系的是______。</text>
+        <option id="A">柱形图</option>
+        <option id="B">折线图</option>
+        <option id="C">饼图</option>
+        <option id="D">雷达图</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据可视化中，图表主要由图表区、绘图区、图表标题、坐标轴、数据系列和______等组成。</text>
+        <option id="A">数据源</option>
+        <option id="B">图例</option>
+        <option id="C">数据库</option>
+        <option id="D">公式</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS/Excel表格中，基于数据透视表生成的图表称为______。</text>
+        <option id="A">柱形图</option>
+        <option id="B">数据透视图</option>
+        <option id="C">折线图</option>
+        <option id="D">饼图</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列数据清洗工具中，属于开源数据清洗工具的是______。</text>
+        <option id="A">WPS</option>
+        <option id="B">OpenRefine</option>
+        <option id="C">Photoshop</option>
+        <option id="D">PowerPoint</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据产生隐私涌现是指______。</text>
+        <option id="A">数据不再需要隐私保护</option>
+        <option id="B">原本安全的信息被综合出涉及个人隐私的敏感数据</option>
+        <option id="C">数据自动加密</option>
+        <option id="D">隐私数据自动消失</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能中的"连接主义"学派主张通过______来模拟智能。</text>
+        <option id="A">逻辑推理和符号操作</option>
+        <option id="B">模拟生物神经元及其连接结构</option>
+        <option id="C">基于"感知-动作"系统</option>
+        <option id="D">遗传算法</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>1956年，首次提出"人工智能"术语的会议是______。</text>
+        <option id="A">图灵测试会议</option>
+        <option id="B">达特茅斯会议</option>
+        <option id="C">普林斯顿会议</option>
+        <option id="D">斯坦福会议</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>机器学习中，用于训练模型的数据集称为______。</text>
+        <option id="A">训练集</option>
+        <option id="B">测试集</option>
+        <option id="C">验证集</option>
+        <option id="D">生产集</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在机器学习中，模型在训练集上表现良好但在测试集上表现差的现象称为______。</text>
+        <option id="A">欠拟合</option>
+        <option id="B">过拟合</option>
+        <option id="C">欠训练</option>
+        <option id="D">过训练</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于分类算法的是______。</text>
+        <option id="A">线性回归</option>
+        <option id="B">K近邻算法</option>
+        <option id="C">主成分分析</option>
+        <option id="D">K-means聚类</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>神经网络中，用于引入非线性变换的组件是______。</text>
+        <option id="A">损失函数</option>
+        <option id="B">激活函数</option>
+        <option id="C">优化器</option>
+        <option id="D">池化层</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于常用激活函数的是______。</text>
+        <option id="A">ReLU</option>
+        <option id="B">均方误差函数</option>
+        <option id="C">交叉熵函数</option>
+        <option id="D">反向传播算法</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>线性回归模型中，包含多个自变量（特征）的模型称为______。</text>
+        <option id="A">一元线性回归</option>
+        <option id="B">多元线性回归</option>
+        <option id="C">逻辑回归</option>
+        <option id="D">岭回归</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能未来发展的技术趋势不包括______。</text>
+        <option id="A">多模态融合</option>
+        <option id="B">大模型应用</option>
+        <option id="C">模拟人类完全替代人类</option>
+        <option id="D">量子AI</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在模型训练中，"epoch"是指______。</text>
+        <option id="A">一次前向传播</option>
+        <option id="B">完整数据集在神经网络中完成一次前向传播和反向传播的过程</option>
+        <option id="C">一次反向传播</option>
+        <option id="D">一次数据预处理</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大模型（如GPT）采用的主要技术架构是______。</text>
+        <option id="A">卷积神经网络（CNN）</option>
+        <option id="B">循环神经网络（RNN）</option>
+        <option id="C">Transformer</option>
+        <option id="D">生成对抗网络（GAN）</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>逻辑回归主要解决的是______问题。</text>
+        <option id="A">回归预测</option>
+        <option id="B">分类</option>
+        <option id="C">聚类</option>
+        <option id="D">降维</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于无监督学习算法的是______。</text>
+        <option id="A">线性回归</option>
+        <option id="B">K-means聚类</option>
+        <option id="C">逻辑回归</option>
+        <option id="D">支持向量机</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>某公司用一元线性回归分析广告投入与销售额的关系，拟合得到方程 y = 2.5x + 30，其中 x 为广告投入（万元），y 为销售额（万元）。当广告投入为10万元时，模型预测的销售额为______万元。</text>
+        <option id="A">30</option>
+        <option id="B">40</option>
+        <option id="C">55</option>
+        <option id="D">25</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列任务中，应当采用分类算法而不是回归算法来解决的是______。</text>
+        <option id="A">根据历史气温数据预测明天的最高温度</option>
+        <option id="B">根据身高和体重预测一个人的体脂率</option>
+        <option id="C">根据邮件内容判断该邮件是否为垃圾邮件</option>
+        <option id="D">根据房屋面积预测房屋总价</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能是研究和开发用于______的理论、方法、技术及应用系统的一门新的技术科学。</text>
+        <option id="A">模拟、延伸和扩展人的智能</option>
+        <option id="B">替代人类所有工作</option>
+        <option id="C">制造更快的计算机</option>
+        <option id="D">构建更大的数据库</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能研究的一个主要目标是______。</text>
+        <option id="A">完全替代人类</option>
+        <option id="B">使机器能够胜任通常需要人类智能才能完成的复杂工作</option>
+        <option id="C">消灭所有体力劳动</option>
+        <option id="D">让所有计算机联网</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>符号主义学派的核心思想是______。</text>
+        <option id="A">基于神经网络模拟人脑</option>
+        <option id="B">基于逻辑推理和符号操作</option>
+        <option id="C">基于感知-动作系统</option>
+        <option id="D">基于遗传算法</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>行为主义学派主要通过______来模拟智能。</text>
+        <option id="A">逻辑推理</option>
+        <option id="B">神经网络</option>
+        <option id="C">感知-动作系统</option>
+        <option id="D">符号操作</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能发展历程中，深度学习的突破性进展始于______年前后。</text>
+        <option id="A">1980</option>
+        <option id="B">2006</option>
+        <option id="C">1990</option>
+        <option id="D">2018</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>2016年，谷歌研发的AlphaGo战胜围棋世界冠军李世石，展示了______在复杂决策问题上的能力。</text>
+        <option id="A">符号主义</option>
+        <option id="B">专家系统</option>
+        <option id="C">深度学习</option>
+        <option id="D">搜索引擎</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>机器学习的数据一般由______两部分组成。</text>
+        <option id="A">结构和标签</option>
+        <option id="B">特征和标签</option>
+        <option id="C">结构和流量</option>
+        <option id="D">特征和流量</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>监督学习主要包括______和______。</text>
+        <option id="A">分类、降维</option>
+        <option id="B">回归、聚类</option>
+        <option id="C">分类、回归</option>
+        <option id="D">聚类、降维</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>无监督学习主要包含______和______。</text>
+        <option id="A">分类、回归</option>
+        <option id="B">聚类、降维</option>
+        <option id="C">分类、聚类</option>
+        <option id="D">回归、降维</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>半监督学习适用的场景是______。</text>
+        <option id="A">所有数据都有标签</option>
+        <option id="B">少量有标签和大量无标签数据</option>
+        <option id="C">没有任何数据</option>
+        <option id="D">只有无标签数据</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>强化学习通过______来不断训练模型。</text>
+        <option id="A">已有标签数据</option>
+        <option id="B">环境对其动作的反馈</option>
+        <option id="C">人工标注</option>
+        <option id="D">静态数据集</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在模型训练中，将数据集划分为训练集、验证集和______。</text>
+        <option id="A">生产集</option>
+        <option id="B">测试集</option>
+        <option id="C">应用集</option>
+        <option id="D">开发集</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>训练集（Training Set）的主要作用是______。</text>
+        <option id="A">评估模型性能</option>
+        <option id="B">训练模型，拟合模型参数</option>
+        <option id="C">调参和模型选择</option>
+        <option id="D">部署模型</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>分类常用评价指标中，衡量模型预测正确的样本占总样本比例的是______。</text>
+        <option id="A">精确率</option>
+        <option id="B">召回率</option>
+        <option id="C">准确率</option>
+        <option id="D">均方误差</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>分类问题中，预测结果是______。</text>
+        <option id="A">连续的数值</option>
+        <option id="B">离散的类别</option>
+        <option id="C">文本描述</option>
+        <option id="D">图像</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>分类算法中，KNN的含义是______。</text>
+        <option id="A">K最近邻算法</option>
+        <option id="B">线性回归</option>
+        <option id="C">支持向量机</option>
+        <option id="D">决策树</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在KNN算法中，通常采用______来衡量两个数据点之间的相似性。</text>
+        <option id="A">面积</option>
+        <option id="B">距离</option>
+        <option id="C">颜色</option>
+        <option id="D">体积</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>某研究要根据房屋面积、房龄和距地铁站距离来预测房价，最适合采用的模型是______。</text>
+        <option id="A">一元线性回归</option>
+        <option id="B">多元线性回归</option>
+        <option id="C">K均值聚类</option>
+        <option id="D">KNN分类</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>神经网络中，神经元模型包含输入信号、权重、偏置、激活函数和______。</text>
+        <option id="A">输出结果</option>
+        <option id="B">分类器</option>
+        <option id="C">数据集</option>
+        <option id="D">损失函数</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>神经网络中引入激活函数的主要目的是______。</text>
+        <option id="A">减少计算量</option>
+        <option id="B">引入非线性变换，增强表达能力</option>
+        <option id="C">增加网络层数</option>
+        <option id="D">提高训练速度</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，不属于常用激活函数的是______。</text>
+        <option id="A">Sigmoid函数</option>
+        <option id="B">ReLU函数</option>
+        <option id="C">Tanh函数</option>
+        <option id="D">线性函数（如y=3x）</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>深度学习是______的一种实现技术。</text>
+        <option id="A">符号主义</option>
+        <option id="B">专家系统</option>
+        <option id="C">机器学习</option>
+        <option id="D">大数据</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>适用于处理图像问题的深度学习网络是______。</text>
+        <option id="A">循环神经网络（RNN）</option>
+        <option id="B">卷积神经网络（CNN）</option>
+        <option id="C">生成对抗网络（GAN）</option>
+        <option id="D">长短期记忆网络（LSTM）</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>关于大模型的安全风险，下列说法错误的是______。</text>
+        <option id="A">算法失控风险——AI系统行为超出预期，可能导致不可预测的负面后果</option>
+        <option id="B">训练数据集污染——恶意行为者操纵或污染训练数据，进而影响模型输出</option>
+        <option id="C">模型算法攻击——攻击者通过输入特定数据诱导模型做出错误判断</option>
+        <option id="D">模型参数量越大，训练所需的时间反而越短</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列现象中，最能体现人工智能"多模态融合"技术趋势的是______。</text>
+        <option id="A">某模型只能对输入的中文文本生成摘要</option>
+        <option id="B">某模型可同时理解图片内容和文字提问，并给出文字回答</option>
+        <option id="C">某模型通过增加训练轮数提高了识别准确率</option>
+        <option id="D">某模型把训练数据存储在云端服务器上</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>使用KNN算法对一个新样本分类，已知与它距离最近的5个样本中，3个属于"合格"类、2个属于"不合格"类。当K=5时，该新样本被判定为______。</text>
+        <option id="A">合格</option>
+        <option id="B">不合格</option>
+        <option id="C">无法判定</option>
+        <option id="D">合格与不合格各占一半</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>某疾病筛查模型在1000个测试样本上评估，其中真正患病的只有10人。该模型把全部1000个样本都预测为"未患病"，则其准确率及由此得出的结论是______。</text>
+        <option id="A">99%；模型性能优秀，可直接投入使用</option>
+        <option id="B">99%；样本类别严重不平衡时，仅看准确率会高估模型的实际性能</option>
+        <option id="C">1%；模型完全失效</option>
+        <option id="D">50%；模型相当于随机猜测</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>某神经元有两个输入 x1=2、x2=3，对应权重 ω1=0.5、ω2=1，偏置 b=-3，激活函数为 ReLU（f(x)=max(0,x)）。该神经元的输出为______。</text>
+        <option id="A">0</option>
+        <option id="B">1</option>
+        <option id="C">4</option>
+        <option id="D">-1</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>某同学用1000条数据训练一个分类模型，他把这1000条数据既用于训练又用于测试，得到准确率99%。这种做法的主要问题是______。</text>
+        <option id="A">数据量太少，无法训练模型</option>
+        <option id="B">无法评估模型对新数据的泛化能力，准确率虚高</option>
+        <option id="C">训练时间过长</option>
+        <option id="D">特征数量不足</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在使用人工智能工具时，用户应保护个人隐私，避免将敏感信息输入AI系统。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在计算机网络中，IP地址用于标识网络中的某一设备，而域名系统（DNS）用于将域名解析为IP地址。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>防火墙是一种用于防止计算机病毒入侵的硬件设备。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>无线局域网（WLAN）通常采用IEEE 802.11标准。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在文字处理软件中，使用"查找替换"功能可以批量修改文档中的特定文字内容。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>矢量图由像素点阵构成，放大后会出现锯齿和模糊。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数字音频采样率越高，单位时间内采集的样本点越多，音质越好。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>修改幻灯片母版可以批量更新大多数幻灯片的风格。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>Markdown语法中使用两个星号包围的文本表示斜体。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算思维是计算机学科的专属，与其它学科没有关联。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>程序设计中的循环结构可以根据条件重复执行一组语句。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据思维接受数据的混杂性与不精确性，通过海量数据挖掘整体趋势和规律。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>单元格引用"$A1"属于绝对引用。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据可视化的核心目的是以图表形式直观呈现数据，帮助发现数据中的模式和趋势。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据不仅仅是一种工具和技术，更是一种思维方式。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据的主要特征中，数据价值密度相对较高。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>数据清洗中，数据审查的目的是全面了解数据的质量和特点。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在WPS表格中，数据透视图可以在没有数据透视表的情况下单独创建。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>电子表格软件（如WPS）可以进行数据排序、筛选、查找和替换等基本的数据清洗操作。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>人工智能的三个主要学派是符号主义、连接主义和行为主义。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在机器学习中，过拟合是指模型在训练集和测试集上都表现不佳。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>激活函数的作用是在神经网络中引入非线性变换，使网络能够学习复杂模式。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大语言模型（LLM）只能用于文本生成，无法处理其他类型的任务。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>符号主义学派认为，智能来源于大量简单神经元的相互连接与并行计算。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>强化学习需要预先给定大量标注数据才能进行训练。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>回归分析中，预测结果是离散的类别值。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大模型的出现推动了人工智能在生成式任务上的能力，如文本生成、图像与视频生成等。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在处理序列数据时，循环神经网络（RNN）是常用的深度学习模型。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>现代信息技术的发展经历了多个阶段，其中将计算机与现代通信技术相结合并普及应用的阶段被称为______。</text>
+        <option id="A">第一次信息技术革命</option>
+        <option id="B">第二次信息技术革命</option>
+        <option id="C">第三次信息技术革命</option>
+        <option id="D">第四次信息技术革命</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，不属于云计算服务层次的是______。</text>
+        <option id="A">IaaS（基础设施即服务）</option>
+        <option id="B">PaaS（平台即服务）</option>
+        <option id="C">DaaS（数据即服务）</option>
+        <option id="D">SaaS（软件即服务）</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>物联网体系结构中，负责数据收集的层次是______。</text>
+        <option id="A">应用层</option>
+        <option id="B">网络层</option>
+        <option id="C">感知层</option>
+        <option id="D">传输层</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大数据的四大特征通常被称为"4V"，其中不包括______。</text>
+        <option id="A">海量的数据规模（Volume）</option>
+        <option id="B">快速的数据流转（Velocity）</option>
+        <option id="C">多样的数据类型（Variety）</option>
+        <option id="D">高价值密度（Value）</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>区块链的主要特性中，区别于互联网"信息传递"的核心特性是______。</text>
+        <option id="A">去中心化和不可篡改</option>
+        <option id="B">速度快和成本低</option>
+        <option id="C">易于复制和共享</option>
+        <option id="D">中心化存储</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>推动人工智能发展的三大核心要素是______。</text>
+        <option id="A">算法、算力、数据</option>
+        <option id="B">硬件、软件、网络</option>
+        <option id="C">感知、推理、决策</option>
+        <option id="D">符号、连接、行为</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在智能计算系统的异构硬件架构中，CPU主要负责通用计算和系统控制，而专门负责高效率并行数值计算的芯片是______。</text>
+        <option id="A">GPU/TPU</option>
+        <option id="B">内存条</option>
+        <option id="C">固态硬盘</option>
+        <option id="D">网卡</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>AIGC是指______。</text>
+        <option id="A">人工智能通用计算</option>
+        <option id="B">人工智能生成内容</option>
+        <option id="C">人工智能图形计算</option>
+        <option id="D">人工智能全局控制</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>使用AIGC工具时，用户输入给AI的指令被称为______。</text>
+        <option id="A">口令</option>
+        <option id="B">密码</option>
+        <option id="C">提示词（Prompt）</option>
+        <option id="D">密钥</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，不属于智能时代信息安全风险的是______。</text>
+        <option id="A">数据泄露</option>
+        <option id="B">网络诈骗</option>
+        <option id="C">人工智能算法偏见</option>
+        <option id="D">计算机硬件升级</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>大学生在智能时代应承担的社会责任不包括______。</text>
+        <option id="A">遵守网络道德规范</option>
+        <option id="B">保护个人和他人隐私</option>
+        <option id="C">传播不实信息</option>
+        <option id="D">负责任地使用人工智能技术</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>边缘计算的核心思想是______。</text>
+        <option id="A">将所有数据上传到云端处理</option>
+        <option id="B">在网络边缘侧就近处理数据</option>
+        <option id="C">使用量子计算机</option>
+        <option id="D">完全不用计算机</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>量子计算中，量子比特不同于经典比特的核心特性是______。</text>
+        <option id="A">只能表示0或1</option>
+        <option id="B">可以同时处于多个状态的叠加态</option>
+        <option id="C">不需要能源</option>
+        <option id="D">速度比经典比特慢</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在提示词工程中，为AI明确设定角色、任务、输出格式等要素，有助于______。</text>
+        <option id="A">降低AI运行速度</option>
+        <option id="B">提高AI生成内容的质量和准确性</option>
+        <option id="C">增加AI的能耗</option>
+        <option id="D">减少AI的可用功能</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列行为中，最能体现智能时代大学生社会责任的是______。</text>
+        <option id="A">利用AI生成论文并直接提交</option>
+        <option id="B">负责任地使用人工智能，遵守学术规范</option>
+        <option id="C">完全拒绝使用任何AI工具</option>
+        <option id="D">随意传播未经核实的AI生成信息</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>一个完整的计算机系统由______两大部分组成。</text>
+        <option id="A">主机和外部设备</option>
+        <option id="B">系统软件和应用软件</option>
+        <option id="C">硬件系统和软件系统</option>
+        <option id="D">CPU和内存</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机中，CPU主要由______两部分组成。</text>
+        <option id="A">运算器和控制器</option>
+        <option id="B">存储器和控制器</option>
+        <option id="C">运算器和存储器</option>
+        <option id="D">输入设备和输出设备</option>
+        <answer>A</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>冯·诺依曼结构计算机的基本工作原理是______。</text>
+        <option id="A">自动控制</option>
+        <option id="B">存储程序</option>
+        <option id="C">并行处理</option>
+        <option id="D">分布式计算</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机中信息的最小存储单位是______。</text>
+        <option id="A">字节（Byte）</option>
+        <option id="B">位（bit）</option>
+        <option id="C">千字节（KB）</option>
+        <option id="D">字（Word）</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>1KB（千字节）等于______字节。</text>
+        <option id="A">1000</option>
+        <option id="B">512</option>
+        <option id="C">1024</option>
+        <option id="D">2048</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>将十进制数15转换为二进制，其结果是______。</text>
+        <option id="A">1110</option>
+        <option id="B">1111</option>
+        <option id="C">1000</option>
+        <option id="D">1101</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机软件分为系统软件和应用软件两大类，下列属于系统软件的是______。</text>
+        <option id="A">WPS</option>
+        <option id="B">操作系统</option>
+        <option id="C">Photoshop</option>
+        <option id="D">微信</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>操作系统的主要功能不包括______。</text>
+        <option id="A">进程管理</option>
+        <option id="B">存储管理</option>
+        <option id="C">文件管理</option>
+        <option id="D">数据库管理</option>
+        <answer>D</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，属于操作系统的是______。</text>
+        <option id="A">WPS</option>
+        <option id="B">Windows</option>
+        <option id="C">Photoshop</option>
+        <option id="D">Python</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机中，采用二进制编码的主要原因是______。</text>
+        <option id="A">运算速度快</option>
+        <option id="B">物理上易于实现，可靠性高</option>
+        <option id="C">编程简单</option>
+        <option id="D">节省存储空间</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>下列选项中，不属于输出设备的是______。</text>
+        <option id="A">显示器</option>
+        <option id="B">打印机</option>
+        <option id="C">键盘</option>
+        <option id="D">音箱</option>
+        <answer>C</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机中，内存的主要作用是______。</text>
+        <option id="A">长期存储数据</option>
+        <option id="B">临时存储正在运行的程序和数据</option>
+        <option id="C">连接外部设备</option>
+        <option id="D">提供电源</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>在计算机中，Cache（高速缓冲存储器）主要解决的是______之间速度不匹配的问题。</text>
+        <option id="A">内存与外存</option>
+        <option id="B">CPU与内存</option>
+        <option id="C">CPU与外存</option>
+        <option id="D">输入设备与输出设备</option>
+        <answer>B</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>信息技术的发展经历了古代信息技术、近代信息技术和现代信息技术三个阶段。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>云计算具有动态扩展性、虚拟化、按需服务和高可靠性等特点。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>物联网的体系结构分为感知层、网络层和应用层三个层次。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>区块链是一种中心化的分布式账本技术。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>计算机硬件系统由运算器、控制器、存储器、输入设备和输出设备五大部件组成。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>1MB等于1000KB。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>F</answer>
+    </question>
+    <question score="1" type="multiple_choice">
+        <text>操作系统是计算机系统软件的核心，负责管理计算机的硬件和软件资源。</text>
+        <option id="T">正确</option>
+        <option id="F">错误</option>
+        <answer>T</answer>
+    </question>
+</quiz>

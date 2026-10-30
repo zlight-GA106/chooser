@@ -1,0 +1,6 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>题库管理浏览器验证</title><script src="../dist/core.js"></script><script src="management-tests.js"></script></head><body><h1>题库管理浏览器验证</h1><pre id="result">正在验证…</pre><script>
+(function(){
+  function get(url){return new Promise(function(resolve,reject){var r=new XMLHttpRequest();r.open('GET',url,true);r.onload=function(){if(r.status>=200&&r.status<300)resolve(r.responseText);else reject(new Error('读取失败 '+url));};r.onerror=reject;r.send();});}
+  Promise.all([get('../dist/example.xml'),get('management-parity.json')]).then(function(data){window.__MANAGEMENT_TEST_RESULTS__=runManagementTests(ChooserCore,data[0],JSON.parse(data[1]));document.getElementById('result').textContent=JSON.stringify(window.__MANAGEMENT_TEST_RESULTS__,null,2);},function(error){window.__MANAGEMENT_TEST_RESULTS__={done:true,passed:0,failures:[String(error)]};document.getElementById('result').textContent=JSON.stringify(window.__MANAGEMENT_TEST_RESULTS__);});
+}());
+</script></body></html>

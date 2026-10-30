@@ -1,0 +1,6 @@
+node_modules/
+.sites-runtime/
+.sites-checkout/
+tests/*.log
+tests/screenshots/
+tests/*-state.json

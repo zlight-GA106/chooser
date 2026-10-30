@@ -1,0 +1,25 @@
+/sw.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/help.html
+  Cache-Control: no-cache
+/
+  Cache-Control: no-cache
+/style.css
+  Cache-Control: public, max-age=86400
+/app.js
+  Cache-Control: public, max-age=86400
+/core.js
+  Cache-Control: public, max-age=86400
+/storage.js
+  Cache-Control: public, max-age=86400
+/default.xml
+  Cache-Control: public, max-age=31536000, immutable
+/example.xml
+  Cache-Control: public, max-age=86400
+/guide.json
+  Cache-Control: no-cache
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin

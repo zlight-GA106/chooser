@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b57d0">
+  <meta name="description" content="选择器 XML 题库写作指南：单选、多选、判断题格式、答案、解析、特殊字符和可下载示例。">
+  <title>题库 XML 写作指南 · 选择器 by zlight106</title>
+  <link rel="icon" href="icon.ico?v=1.4.1">
+  <link rel="stylesheet" href="style.css?v=1.4.1">
+</head>
+<body>
+<div class="shell">
+  <header class="app-header help-header">
+    <a class="brand" href="index.html" aria-label="选择器首页"><img class="brand-icon" src="icon.svg?v=1.4.1" width="36" height="36" alt=""><span>选择器</span></a>
+    <nav class="display-controls" aria-label="帮助导航"><a class="button help-link" href="index.html">返回答题</a></nav>
+  </header>
+  <main id="guide">
+    <section class="card help-intro">
+      <div class="card-title"><h1>题库 XML 写作指南</h1></div>
+      <div class="actions"><a class="button primary" href="example.xml?v=1.4.1" download="选择器示例题库.xml">下载示例 XML</a><a class="button" href="index.html">返回答题</a></div>
+      <details class="guide-toc"><summary>查看目录</summary><ol><li><a href="#section-1">1. 创建一个 XML 题库</a></li>
+<li><a href="#section-2">2. 题库名称与题干</a></li>
+<li><a href="#section-3">3. 编写选项</a></li>
+<li><a href="#section-4">4. 单选与多选答案</a></li>
+<li><a href="#section-5">5. 判断题</a></li>
+<li><a href="#section-6">6. 可选解析与每题分值</a></li>
+<li><a href="#section-7">7. 特殊字符、CDATA 与编码</a></li>
+<li><a href="#section-8">8. 导入前检查</a></li>
+<li><a href="#section-9">9. 文件安全与保存</a></li></ol></details>
+      <p class="help-version">选择器 v1.4.0</p>
+    </section>
+<section class="card guide-section" id="section-1" aria-labelledby="heading-1">
+<h2 id="heading-1">1. 创建一个 XML 题库</h2>
+<p>用纯文本编辑器新建文件，以 UTF-8 编码保存为 .xml。根节点必须是 &lt;quiz&gt;，每道题使用一个 &lt;question&gt;。点击“下载示例 XML”可得到一份包含单选、多选和判断题的完整题库，修改后即可导入。</p>
+<p class="code-caption">可直接导入的完整示例</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;quiz title=&quot;我的题库&quot;&gt;
+  &lt;question type=&quot;multiple_choice&quot; score=&quot;1&quot;&gt;
+    &lt;text&gt;2 + 2 等于多少？&lt;/text&gt;
+    &lt;option id=&quot;A&quot;&gt;3&lt;/option&gt;
+    &lt;option id=&quot;B&quot;&gt;4&lt;/option&gt;
+    &lt;answer&gt;B&lt;/answer&gt;
+    &lt;explanation&gt;2 + 2 = 4。&lt;/explanation&gt;
+  &lt;/question&gt;
+&lt;/quiz&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-2" aria-labelledby="heading-2">
+<h2 id="heading-2">2. 题库名称与题干</h2>
+<p>&lt;quiz&gt; 的 title 属性可选；不填写时使用 XML 文件名作为题库名。每题必须有非空的 &lt;text&gt; 题干，也可使用兼容标签 &lt;prompt&gt;。推荐统一使用 type=&quot;multiple_choice&quot;；单选、多选和 T/F 判断题都使用这个类型，程序根据正确答案和选项判断显示方式。题号按文件内的题目顺序从 1 开始生成，无需手写题号属性。</p>
+<p class="code-caption">结构示意：继续补全选项与答案后再导入</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;quiz title=&quot;计算机基础&quot;&gt;
+  &lt;question type=&quot;multiple_choice&quot;&gt;
+    &lt;text&gt;题目正文写在这里。&lt;/text&gt;
+    &lt;!-- 继续填写选项与答案 --&gt;
+  &lt;/question&gt;
+&lt;/quiz&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-3" aria-labelledby="heading-3">
+<h2 id="heading-3">3. 编写选项</h2>
+<p>每题至少两个非空的 &lt;option&gt;。每个选项必须有唯一、非空的 id，常用 A、B、C、D，也支持 T/F 或自定义编号。导入时 id 与答案不区分大小写。id 不要包含空格、逗号、分号、顿号、斜线、竖线或加号等答案分隔符。不要在同一道题里重复使用相同 id。</p>
+<p class="code-caption">代码片段：按说明放入对应题目</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;option id=&quot;A&quot;&gt;选项一&lt;/option&gt;
+&lt;option id=&quot;B&quot;&gt;选项二&lt;/option&gt;
+&lt;option id=&quot;C&quot;&gt;选项三&lt;/option&gt;
+&lt;option id=&quot;D&quot;&gt;选项四&lt;/option&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-4" aria-labelledby="heading-4">
+<h2 id="heading-4">4. 单选与多选答案</h2>
+<p>&lt;answer&gt; 填选项 id，不能填选项正文。单选如 B；多选推荐写 A,C，也支持单字符 id 连写 AC。自定义多字符 id 应使用逗号分隔，例如 ITEM1,ITEM3。所有答案必须完整匹配已有选项。多选按集合完全一致判分，漏选、多选均不得分。</p>
+<p class="code-caption">代码片段：按说明放入对应题目</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;!-- 单选 --&gt;
+&lt;answer&gt;B&lt;/answer&gt;
+
+&lt;!-- 多选：两种写法等价 --&gt;
+&lt;answer&gt;A,C&lt;/answer&gt;
+&lt;answer&gt;AC&lt;/answer&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-5" aria-labelledby="heading-5">
+<h2 id="heading-5">5. 判断题</h2>
+<p>判断题使用两个选项 T 和 F，并在 &lt;answer&gt; 填写正确选项的 id。不要只在题干里写“正确 / 错误”而省略选项。</p>
+<p class="code-caption">代码片段：按说明放入对应题目</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;question type=&quot;multiple_choice&quot;&gt;
+  &lt;text&gt;地球是一颗行星。&lt;/text&gt;
+  &lt;option id=&quot;T&quot;&gt;正确&lt;/option&gt;
+  &lt;option id=&quot;F&quot;&gt;错误&lt;/option&gt;
+  &lt;answer&gt;T&lt;/answer&gt;
+&lt;/question&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-6" aria-labelledby="heading-6">
+<h2 id="heading-6">6. 可选解析与每题分值</h2>
+<p>可以加入 &lt;explanation&gt;，兼容标签为 &lt;analysis&gt;。未填写解析也能正常答题。开启“显示答案”时会展示答案与解析；开启“立即评分”时提交后展示本题得分。所有题目固定每题 1 分，XML 的 score 属性不会改变计分；建议写 score=&quot;1&quot; 或直接省略。暂不支持填空题。</p>
+<p class="code-caption">代码片段：按说明放入对应题目</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;answer&gt;B&lt;/answer&gt;
+&lt;explanation&gt;这里说明为什么 B 正确。&lt;/explanation&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-7" aria-labelledby="heading-7">
+<h2 id="heading-7">7. 特殊字符、CDATA 与编码</h2>
+<p>正文中的 &amp; 写成 &amp;amp;，小于号 &lt; 写成 &amp;lt;，大于号可写成 &amp;gt;。属性值使用双引号时，内部双引号写成 &amp;quot;；单引号可写成 &amp;apos;。也可用 CDATA 包住包含大量特殊字符的题干或解析，但内容中不能直接包含 CDATA 的结束标记 ]]&gt;。优先使用 UTF-8，文件实际编码应与 XML 声明一致。</p>
+<p class="code-caption">代码片段：按说明放入对应题目</p><pre class="xml-code" tabindex="0" aria-label="XML 示例代码"><code>&lt;text&gt;判断：3 &amp;lt; 5 且 A &amp;amp; B 有意义。&lt;/text&gt;
+
+&lt;!-- 与上面的转义方式二选一 --&gt;
+&lt;text&gt;&lt;![CDATA[判断：3 &lt; 5 且 A &amp; B 有意义。]]&gt;&lt;/text&gt;</code></pre>
+</section>
+<section class="card guide-section" id="section-8" aria-labelledby="heading-8">
+<h2 id="heading-8">8. 导入前检查</h2>
+<p>检查根节点是否为 &lt;quiz&gt;；每道题是否有题干、至少两个选项及有效答案；选项 id 是否重复；开始与结束标签是否配对；&amp; 等特殊字符是否转义；文件是否保存为真正的 .xml 而非 .xml.txt。导入报错会指出题号，格式损坏时还会尽量提示 XML 行号。只要有不合法题目，整个文件会拒绝导入，修正后重新导入即可。</p>
+</section>
+<section class="card guide-section" id="section-9" aria-labelledby="heading-9">
+<h2 id="heading-9">9. 文件安全与保存</h2>
+<p>禁止在题库中使用 DTD、自定义实体或外部实体，也不要填写外部资源地址来引用题目。单个 XML 最多支持 32 MB。导入后题库和记录保存在当前设备；网页使用当前浏览器缓存，单文件版使用本机缓存。相同内容重复导入会使用已有题库；内容不同但同名的题库会分别保留。重要记录请在“管理题库”备份。</p>
+</section>
+    <nav class="help-bottom" aria-label="帮助页底部导航"><a class="button primary" href="example.xml?v=1.4.1" download="选择器示例题库.xml">下载示例 XML</a><a class="button" href="index.html">返回答题</a><a class="button" href="#guide">回到顶部</a></nav>
+  </main>
+</div>
+</body>
+</html>
