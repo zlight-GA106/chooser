@@ -23,14 +23,16 @@
 
 | 文件 | 用途 |
 | --- | --- |
-| `选择器单文件版v1.4.exe` | Windows 桌面离线版，直接发给老师 |
-| `选择器Go服务端v1.4-Windows.exe` | Windows x86-64 网页服务端 |
-| `选择器Go服务端v1.4-Linux-amd64` | Linux x86-64 网页服务端 |
-| `选择器Go服务端v1.4.zip` | Windows/Linux 服务端、部署说明和 Go 许可证合集 |
-| `选择器网页版v1.4.zip` | 已有 Nginx、Apache、宝塔或静态托管部署 |
+| `chooser-desktop-v1.4.0.exe` | Windows 桌面离线版，直接发给老师 |
+| `chooser-server-v1.4.0-windows-amd64.exe` | Windows x86-64 网页服务端 |
+| `chooser-server-v1.4.0-linux-amd64` | Linux x86-64 网页服务端 |
+| `chooser-server-v1.4.0.zip` | Windows/Linux 服务端、部署说明和 Go 许可证合集 |
+| `chooser-web-v1.4.0.zip` | 已有 Nginx、Apache、宝塔或静态托管部署 |
 | `SHA256.txt` | 发布附件 SHA-256 校验值 |
 
 Linux 先执行 `uname -m`，输出 `x86_64` 可使用 amd64 附件；ARM/aarch64 需从源码编译对应架构。可用 `sha256sum 文件名` 或 PowerShell 的 `Get-FileHash -Algorithm SHA256 -LiteralPath '文件名'` 与 `SHA256.txt` 比较。
+
+Release 使用英文附件名；从源码构建或解压服务端合集时，程序也可能采用中文文件名，功能相同。
 
 推荐：**Linux Go 程序 + systemd 常驻 + Nginx 域名 HTTPS**。局域网临时使用可直接运行 Go，访问 `http://服务器IP:8088/`；已有网站环境也可选择纯静态部署。
 
@@ -232,7 +234,7 @@ location /chooser/ {
 
 此处用 Go 服务端 EXE，与桌面离线版 EXE 不同。
 
-1. 下载 `选择器Go服务端v1.4-Windows.exe`，放到如 `C:\Apps\Chooser\`，可重命名为 `chooser-server.exe`。无需安装 Go 或 .NET。
+1. 下载 `chooser-server-v1.4.0-windows-amd64.exe`，放到如 `C:\Apps\Chooser\`，可重命名为 `chooser-server.exe`。无需安装 Go 或 .NET。
 2. PowerShell 运行：
 
    ```powershell
@@ -250,7 +252,7 @@ location /chooser/ {
 
 已有 Nginx、Apache、宝塔网站或静态托管时，无需另开 Go：
 
-1. 下载并解压 `选择器网页版v1.4.zip`。
+1. 下载并解压 `chooser-web-v1.4.0.zip`。
 2. 上传**解压后的全部文件内容**，让网站目录直接包含 `index.html`、`help.html`、`app.js`、`core.js`、`storage.js`、`sw.js`、`default.xml`、图标等，不要只上传 ZIP。
 3. 默认文档设为 `index.html`，配置域名和 HTTPS。根目录或 `/chooser/` 子目录均可，相对文件位置保持不变。
 4. 访问 HTTP/HTTPS 地址，不要双击 HTML 使用 `file://`。
@@ -351,7 +353,7 @@ curl -f http://127.0.0.1:8088/healthz
 
 ## 十、Windows 桌面离线版
 
-把 `选择器单文件版v1.4.exe` 单独发给老师，放到 Windows 10/11 双击。原生 WPF 依赖 .NET Framework 4.8，无需浏览器组件、Python 或 Node.js，默认题库和帮助已内嵌。
+把 `chooser-desktop-v1.4.0.exe` 单独发给老师，放到 Windows 10/11 双击。原生 WPF 依赖 .NET Framework 4.8，无需浏览器组件、Python 或 Node.js，默认题库和帮助已内嵌。
 
 缓存为 `%LOCALAPPDATA%\ChooserClassroom\state.json`，保存保留上一份 `.bak`。移动 EXE 不影响同一 Windows 用户缓存；`--data-dir <目录>` 可指定独立目录。详细操作和快捷键见 [使用说明](使用说明.md)。
 
