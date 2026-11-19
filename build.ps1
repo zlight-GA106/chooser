@@ -3,8 +3,8 @@ $rootPath = $PSScriptRoot
 $frameworkPath = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319'
 $compilerPath = Join-Path $frameworkPath 'csc.exe'
 $wpfPath = Join-Path $frameworkPath 'WPF'
-$outputPath = Join-Path $rootPath '选择器单文件版v1.5.exe'
-$sourceFiles = @('src\Program.cs', 'src\Core.cs', 'src\PortableStore.cs', 'src\MainWindow.cs', 'src\SelfTests.cs') | ForEach-Object { Join-Path $rootPath $_ }
+$outputPath = Join-Path $rootPath '选择器单文件版v1.6.1.exe'
+$sourceFiles = @('src\Program.cs', 'src\Core.cs', 'src\CsvQuiz.cs', 'src\PortableStore.cs', 'src\MainWindow.cs', 'src\SelfTests.cs') | ForEach-Object { Join-Path $rootPath $_ }
 $compilerArguments = @(
     '/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output',
     '/codepage:65001', '/main:Chooser.Program',
@@ -21,7 +21,8 @@ $compilerArguments = @(
     ('/reference:' + (Join-Path $frameworkPath 'System.Xaml.dll')),
     ('/resource:' + (Join-Path $rootPath 'assets\default.xml') + ',default.xml'),
     ('/resource:' + (Join-Path $rootPath 'assets\xml-guide.json') + ',xml-guide.json'),
-    ('/resource:' + (Join-Path $rootPath 'assets\example.xml') + ',example.xml')
+    ('/resource:' + (Join-Path $rootPath 'assets\example.xml') + ',example.xml'),
+    ('/resource:' + (Join-Path $rootPath 'assets\example.csv') + ',example.csv')
 )
 $iconPath = Join-Path $rootPath 'assets\chooser.ico'
 if (Test-Path -LiteralPath $iconPath) { $compilerArguments += ('/win32icon:' + $iconPath) }

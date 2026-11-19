@@ -56,18 +56,20 @@ namespace Chooser
                 state = store.Load();
                 window = new MainWindow(store, state);
 
-                Test("首页保留答题入口，考试选项只在设置页出现", delegate
+                Test("首页提供考试范围、抽题、随机考试和随机选项", delegate
                 {
                     Check(Field<string>("view") == "home", "初始页面不是首页。");
                     Check(Field<Button>("startButton").IsEnabled, "已有题库时开始按钮不可用。");
-                    Check(Find<Button>().All(b => !Equals(b.Content, "管理题库") && !Equals(b.Content, "随机考试")) && !Find<CheckBox>().Any(), "首页仍暴露受保护的考试选项。");
+                    Check(Find<Button>().All(b => !Equals(b.Content, "管理题库")) && Button("随机考试").IsEnabled, "随机考试或题库管理入口位置错误。");
+                    Check(Find<CheckBox>().Single(c => Equals(c.Content, "随机选项")).IsChecked == false, "随机选项默认应关闭。");
+                    Check(Field<TextBox>("rangeStartBox").Text == "1" && Field<TextBox>("rangeEndBox").Text == "3", "默认范围应包含全库。");
                     Call("ShowManage");
                     Check(Field<string>("view") == "home", "锁定时从首页可以直接进入管理。");
                     Check(!AllText().Contains("UID") && !AllText().Contains("多端同步"), "界面残留 UID 或同步入口。");
                     Render("integration-home");
                 });
 
-                Test("设置密码拒绝错误输入，范围经过校验并保存", delegate
+                Test("设置密码拒绝错误输入，考试选项移出设置", delegate
                 {
                     string password = Environment.GetEnvironmentVariable("CHOOSER_TEST_SETTINGS_PASSWORD");
                     bool authenticated = OpenSettingsAndCheckPassword(password);
@@ -78,22 +80,20 @@ namespace Chooser
                         ShowUnlockedSettings();
                     }
                     Check(Field<string>("view") == "settings", "正确密码未进入设置。");
-                    TextBox first = Find<TextBox>().Single(t => AutomationProperties.GetName(t) == "起始题号");
-                    TextBox last = Find<TextBox>().Single(t => AutomationProperties.GetName(t) == "结束题号");
-                    Check(first.Text == "1" && last.Text == "3", "默认考试范围不是全部题目。");
-                    first.Text = "0";
-                    Click(Button("保存设置"));
-                    Check(Field<string>("view") == "settings" && AllText().Contains("有效起止题号"), "无效范围未留在设置页。");
-                    first.Text = "1";
+                    Check(!Find<TextBox>().Any() && !Find<Button>().Any(b => Equals(b.Content, "随机考试")), "考试选项仍留在设置。");
                     Click(Button("保存设置"));
                     Check(Field<string>("view") == "home" && !Field<bool>("settingsUnlocked"), "保存并返回首页后未重新锁定设置。");
-                    Check(store.Load().RangeEnd == 3, "考试范围未持久化。");
                 });
 
-                Test("顺序练习使用保存的范围，单选草稿自动持久化", delegate
+                Test("首页起止题号经过校验，顺序练习和单选草稿自动持久化", delegate
                 {
+                    Field<TextBox>("rangeStartBox").Text = "0";
+                    Click(Field<Button>("startButton"));
+                    Check(Field<string>("view") == "home" && AllText().Contains("有效起止题号"), "无效范围未在首页提示。");
+                    Field<TextBox>("rangeStartBox").Text = "1";
                     Call("Start", false);
                     Check(Field<string>("view") == "quiz" && state.Active.QuestionIds.Count == 3, "首页开始未创建三题练习。");
+                    Check(store.Load().RangeEnd == 3, "考试范围未持久化。");
                     Check(AllText().Contains("单选  ·  1 分"), "单选题型或一题一分标记缺失。");
                     Check(!Field<Button>("nextButton").IsEnabled, "未选答案时应禁用提交。");
                     Choose("A");
@@ -215,40 +215,31 @@ namespace Chooser
                     Check(store.Load().Wrongs.Single().Count == 1, "损坏备份覆盖了原缓存。");
                 });
 
-                Test("随机考试真实模态控件：默认 3，拒绝 4，确认 2 返回有效数量", delegate
+                Test("从首页随机抽题并打乱选项，续答与评分继续用同一顺序", delegate
                 {
-                    ShowUnlockedSettings();
-                    // Give the owner a hidden HWND; no desktop input, activation, or OS UI Automation.
-                    new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle();
-                    Exception modalError = null;
-                    Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate
-                    {
-                        Window dialog = null;
-                        try
-                        {
-                            dialog = Application.Current.Windows.Cast<Window>().Single(w => w != window && w.Title == "随机考试");
-                            Check(dialog.IsVisible, "随机考试模态窗口未打开。");
-                            var content = (FrameworkElement)dialog.Content;
-                            TextBox input = Descendants(content).OfType<TextBox>().Single();
-                            Button confirm = Descendants(content).OfType<Button>().Single(b => b.Content is string && (string)b.Content == "进入考试");
-                            Check(input.Text == "3", "三题范围内默认抽题数量不是 3。");
-                            input.Text = "4";
-                            confirm.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-                            Check(dialog.IsVisible && Descendants(content).OfType<TextBlock>().Any(t => t.Text.Contains("请输入 1–3 之间的整数")), "非法抽题数量未保留模态并显示错误。");
-                            RenderElement(content, dialog.Background, Math.Max(1, (int)Math.Ceiling(dialog.ActualWidth)), Math.Max(1, (int)Math.Ceiling(dialog.ActualHeight)), "integration-exam-modal-invalid");
-                            input.Text = "2";
-                            confirm.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-                        }
-                        catch (Exception error)
-                        {
-                            modalError = error;
-                            if (dialog != null) dialog.Close();
-                            else foreach (Window remaining in Application.Current.Windows.Cast<Window>().Where(w => w != window && w.Title == "随机考试").ToList()) remaining.Close();
-                        }
-                    }));
+                    state.Active = null;
+                    Call("ShowHome");
+                    var count = Field<TextBox>("randomCountBox");
+                    count.Text = "4";
                     Click(Button("随机考试"));
-                    if (modalError != null) throw new InvalidOperationException("随机考试模态控件验证失败", modalError);
-                    Check(Field<string>("view") == "quiz" && state.Active.Mode == "随机考试" && state.Active.QuestionIds.Count == 2, "确认有效抽题数量后未开始 2 题考试。");
+                    Check(Field<string>("view") == "home" && AllText().Contains("随机抽题数应为 1–3"), "非法抽题数量未在首页提示。");
+                    var shuffle = Find<CheckBox>().Single(c => Equals(c.Content, "随机选项"));
+                    shuffle.IsChecked = true;
+                    Check(store.Load().ShuffleOptions, "随机选项勾选未保存。");
+                    count.Text = "2";
+                    Click(Button("随机考试"));
+                    Check(Field<string>("view") == "quiz" && state.Active.Mode == "随机考试" && state.Active.QuestionIds.Count == 2, "首页未开始 2 题随机考试。");
+                    var bank = state.Banks.Single(b => b.Id == state.Active.BankId);
+                    var question = QuizEngine.Current(bank, state.Active);
+                    var order = QuizEngine.DisplayOptions(question, state.Active).ToList();
+                    var cached = store.Load();
+                    Check(QuizEngine.OptionsAreShuffled(cached.Active) && QuizEngine.DisplayOptions(question, cached.Active).Select(o => o.Id).SequenceEqual(order.Select(o => o.Id)), "续答没有保留随机选项顺序。");
+                    var buttons = Field<Dictionary<string, Button>>("optionButtons");
+                    for (int index = 0; index < order.Count; index++)
+                        Check(AutomationProperties.GetName(buttons[order[index].Id]).StartsWith(((char)('A' + index)) + ". "), "选项字母没有根据显示位置编号。");
+                    foreach (string id in question.Answers) Choose(id);
+                    Call("SubmitCurrent");
+                    Check(state.Active.Attempts.Single().Correct, "重新编号改变了判分。");
                 });
 
                 Report.Add("SKIP  提前交卷确认由真实 Windows 界面验收；提前结算计分与持久化已有核心测试覆盖。");

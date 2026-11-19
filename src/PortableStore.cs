@@ -21,6 +21,7 @@ namespace Chooser
         private byte[] snapshotDigest;
         private long imageSize;
         private long compressedSize;
+        private bool usingNearbyStaging;
 
         public PortableStore(string executable, string legacyDirectory)
             : base(legacyDirectory)
@@ -32,7 +33,7 @@ namespace Chooser
                 imageDigest = Hash(input);
                 ReadFooter(input);
             }
-            DirectoryPath = StagingDirectory();
+            DirectoryPath = StagingDirectory(false);
         }
 
         public override bool HasSnapshot { get { return snapshotDigest != null || base.HasSnapshot; } }
@@ -40,6 +41,13 @@ namespace Chooser
         public override AppState Load()
         {
             LoadWarning = "";
+            string nearby = StagingDirectory(true);
+            // A successful fallback write supersedes anything left at the original path.
+            if (new Store(nearby).HasSnapshot)
+            {
+                DirectoryPath = nearby;
+                usingNearbyStaging = true;
+            }
             if (base.HasSnapshot)
             {
                 AppState staged = base.Load();
@@ -78,14 +86,49 @@ namespace Chooser
             if (File.Exists(MigrationMarker) || !legacy.HasSnapshot) return new AppState();
             AppState migrated = legacy.Load();
             Save(migrated);
-            LoadWarning = "已读取旧版题库与记录。正常关闭后，数据会写入此 EXE。" + legacy.LoadWarning;
+            LoadWarning = "已读取旧版题库与记录。正常关闭后，数据会写入此 EXE。\n" + legacy.LoadWarning + LoadWarning;
             return migrated;
+        }
+
+        public override void Save(AppState state)
+        {
+            try { base.Save(state); }
+            catch (UnauthorizedAccessException error)
+            {
+                if (usingNearbyStaging) throw;
+                SaveNearby(state, error);
+            }
+            catch (IOException error)
+            {
+                if (usingNearbyStaging) throw;
+                SaveNearby(state, error);
+            }
+        }
+
+        private void SaveNearby(AppState state, Exception originalError)
+        {
+            string originalPath = DirectoryPath;
+            DirectoryPath = StagingDirectory(true);
+            try
+            {
+                base.Save(state);
+                usingNearbyStaging = true;
+                LoadWarning += "本机缓存目录不可写，已改用 EXE 所在文件夹暂存。";
+            }
+            catch (Exception nearbyError)
+            {
+                DirectoryPath = originalPath;
+                if (!(nearbyError is UnauthorizedAccessException) && !(nearbyError is IOException)) throw;
+                throw new IOException("本机缓存和 EXE 所在文件夹均无法保存数据。请将 EXE 复制到可写目录后重试。\n" +
+                    nearbyError.Message, new AggregateException(originalError, nearbyError));
+            }
         }
 
         public override void Flush()
         {
             if (!File.Exists(StatePath)) return;
             string staging = DirectoryPath;
+            string otherStaging = StagingDirectory(!usingNearbyStaging);
             string temporary = Path.Combine(Path.GetDirectoryName(executable), ".chooser-" + Guid.NewGuid().ToString("N") + ".tmp");
             try
             {
@@ -125,9 +168,12 @@ namespace Chooser
                     imageDigest = newImageDigest;
                     snapshotDigest = newDigest;
                     compressedSize = newCompressedSize;
-                    DirectoryPath = StagingDirectory();
+                    DirectoryPath = StagingDirectory(usingNearbyStaging);
                 }
-                FinishStaging(staging);
+                MarkMigrated();
+                // Without a new image hash, both slots still match this executable.
+                // Keep the authoritative snapshot until the older one can be removed.
+                if (newImageDigest != null || ClearStaging(otherStaging)) ClearStaging(staging);
             }
             catch (IOException error) { throw PortableWriteError(error); }
             catch (UnauthorizedAccessException error) { throw PortableWriteError(error); }
@@ -156,15 +202,18 @@ namespace Chooser
 
         private string MigrationMarker { get { return Path.Combine(legacyDirectory, "portable-v15-migrated"); } }
 
-        private string StagingDirectory()
+        private string StagingDirectory(bool besideExecutable)
         {
             string stamp = Convert.ToBase64String(imageDigest);
             byte[] name = Encoding.UTF8.GetBytes(executable.ToUpperInvariant() + "\n" + stamp);
+            string root = besideExecutable
+                ? Path.Combine(Path.GetDirectoryName(executable), ".chooser-recovery")
+                : Path.Combine(legacyDirectory, "portable");
             using (SHA256 sha = SHA256.Create())
-                return Path.Combine(legacyDirectory, "portable", BitConverter.ToString(sha.ComputeHash(name)).Replace("-", ""));
+                return Path.Combine(root, BitConverter.ToString(sha.ComputeHash(name)).Replace("-", ""));
         }
 
-        private void FinishStaging(string staging)
+        private void MarkMigrated()
         {
             try
             {
@@ -173,12 +222,23 @@ namespace Chooser
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
-            string backup = Path.Combine(staging, "state.json.bak");
-            TryDelete(backup);
-            if (!File.Exists(backup)) TryDelete(Path.Combine(staging, "state.json"));
+        }
+
+        private static bool ClearStaging(string staging)
+        {
+            // Remove the backup first. Failing partway must leave the latest good state.
+            try
+            {
+                File.Delete(Path.Combine(staging, "state.json.bak"));
+                File.Delete(Path.Combine(staging, "state.json"));
+            }
+            catch (DirectoryNotFoundException) { return true; }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
             try { Directory.Delete(staging); }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
+            return true;
         }
 
         private FileStream OpenImage()

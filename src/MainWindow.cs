@@ -24,6 +24,8 @@ namespace Chooser
         [DataMember] public string ExampleFile { get; set; }
         [DataMember] public string Prompt { get; set; }
         [DataMember] public List<XmlGuideSection> Sections { get; set; }
+        [DataMember] public string CsvPrompt { get; set; }
+        [DataMember] public List<XmlGuideSection> CsvSections { get; set; }
     }
 
     [DataContract]
@@ -42,8 +44,9 @@ namespace Chooser
         ScrollViewer scroll;
         TextBlock status;
         ComboBox bankPicker;
+        TextBox rangeStartBox, rangeEndBox, randomCountBox;
         TextBlock bankHint;
-        Button startButton, nextButton;
+        Button startButton, randomExamButton, nextButton;
         readonly Dictionary<string, Button> optionButtons = new Dictionary<string, Button>();
         readonly Dictionary<string, TextBlock> optionMarkers = new Dictionary<string, TextBlock>();
         string view = "home";
@@ -186,7 +189,7 @@ namespace Chooser
             var minus = Action("A−", delegate { ChangeZoom(-0.1); }, false); minus.Padding = new Thickness(12, 7, 12, 7); minus.ToolTip = "缩小字号";
             var plus = Action("A+", delegate { ChangeZoom(0.1); }, false); plus.Padding = new Thickness(12, 7, 12, 7); plus.ToolTip = "放大字号";
             var theme = Action(data.Dark ? "浅色" : "深色", delegate { data.Dark = !data.Dark; Save(); ApplyTheme(); Redraw(); }, false); theme.Padding = new Thickness(12, 7, 12, 7);
-            var help = Action("帮助", ShowHelp, false); help.Padding = new Thickness(12, 7, 12, 7); help.ToolTip = "题库 XML 写作指南（F1）";
+            var help = Action("帮助", ShowHelp, false); help.Padding = new Thickness(12, 7, 12, 7); help.ToolTip = "CSV 和 XML 导入指南（F1）";
             var full = Action(fullScreen ? "退出全屏" : "全屏 F11", ToggleFull, false); full.Padding = new Thickness(12, 7, 12, 7); full.Margin = new Thickness(0, 0, 0, 10);
             controls.Children.Add(minus); controls.Children.Add(plus); controls.Children.Add(theme); controls.Children.Add(help); controls.Children.Add(full);
             DockPanel.SetDock(controls, Dock.Right); header.Children.Add(controls);
@@ -219,11 +222,13 @@ namespace Chooser
                 if (resource != null) return (XmlGuideDocument)new DataContractJsonSerializer(typeof(XmlGuideDocument)).ReadObject(resource);
             }
             // Core-only verification builds do not embed release resources.
-            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.5.0", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "题库用 <quiz> 包住所有题目。每题填写题干、至少两个选项和答案，保存为 UTF-8 的 .xml 文件。" } } };
+            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.6.1", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "题库用 <quiz> 包住所有题目。每题填写题干、至少两个选项和答案，保存为 UTF-8 的 .xml 文件。" } } };
         }
-        static string ReadExample()
+        static string ReadExample() { return ReadHelpResource("example.xml"); }
+        static string ReadCsvExample() { return ReadHelpResource("example.csv"); }
+        static string ReadHelpResource(string resourceName)
         {
-            using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream("example.xml"))
+            using (var resource = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
             {
                 if (resource == null) throw new InvalidDataException("示例资源未找到，请使用完整的选择器单文件版。");
                 using (var reader = new StreamReader(resource, Encoding.UTF8)) return reader.ReadToEnd();
@@ -234,36 +239,91 @@ namespace Chooser
             Begin("help");
             var guide = ReadGuide();
             var inner = new StackPanel();
-            var heading = Text(guide.Title, 28, "Ink"); heading.FontWeight = FontWeights.SemiBold; inner.Children.Add(heading);
-            var actions = Actions(); actions.Margin = new Thickness(0, 18, 0, 8);
-            actions.Children.Add(Action("返回首页", ShowHome, false));
-            if (data.Active != null && ActiveBank != null && (!data.Active.Completed || data.Active.FeedbackPending)) actions.Children.Add(Action("返回答题", ShowQuestion, false));
-            actions.Children.Add(Action("下载示例 XML", ExportExample, false));
+            var header = new DockPanel();
+            var actions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
+            var home = Action("返回首页", ShowHome, false);
+            home.Margin = new Thickness(9, 0, 0, 0);
+            actions.Children.Add(home);
+            if (data.Active != null && ActiveBank != null && (!data.Active.Completed || data.Active.FeedbackPending))
+            {
+                var resume = Action("返回答题", ShowQuestion, false);
+                resume.Margin = new Thickness(9, 0, 0, 0);
+                actions.Children.Add(resume);
+            }
+            DockPanel.SetDock(actions, Dock.Right);
+            header.Children.Add(actions);
+            var heading = Text("题库导入指南", 28, "Ink");
+            heading.FontWeight = FontWeights.SemiBold;
+            heading.VerticalAlignment = VerticalAlignment.Center;
+            header.Children.Add(heading);
+            inner.Children.Add(header);
+            page.Children.Add(Card(inner));
+
+            if (guide.CsvSections != null)
+            {
+                var csv = HelpFormat("CSV 导入指南", "CSV", guide.CsvPrompt, guide.CsvSections, ReadCsvExample);
+                if (Assembly.GetExecutingAssembly().GetManifestResourceInfo("example.csv") != null)
+                    csv.Children.Add(HelpCode(ReadCsvExample(), "CSV 示例"));
+                page.Children.Add(Card(csv));
+            }
+            var xml = HelpFormat(guide.Title, "XML", guide.Prompt, guide.Sections, ReadExample);
+            var version = Text("选择器 v" + guide.Version, 12, "Muted");
+            version.Margin = new Thickness(0, 25, 0, 0);
+            xml.Children.Add(version);
+            page.Children.Add(Card(xml));
+        }
+        StackPanel HelpFormat(string title, string format, string prompt, IEnumerable<XmlGuideSection> sections, Func<string> readExample)
+        {
+            var inner = new StackPanel();
+            var heading = Text(title, 23, "Ink"); heading.FontWeight = FontWeights.SemiBold; inner.Children.Add(heading);
+            var actions = Actions(); actions.Margin = new Thickness(0, 14, 0, 0);
             var clipboardStatus = Text("", 13, "Muted");
             clipboardStatus.Visibility = Visibility.Collapsed;
-            if (!String.IsNullOrWhiteSpace(guide.Prompt))
+            actions.Children.Add(Action("下载示例 " + format, delegate { ExportExample(format, readExample); }, false));
+            actions.Children.Add(Action("复制示例 " + format, delegate {
+                CopyHelpText(readExample, "示例 " + format + " 已复制。", clipboardStatus);
+            }, false));
+            if (!String.IsNullOrWhiteSpace(prompt))
             {
-                actions.Children.Add(Action("复制 AI 代写提示词", delegate {
-                    CopyHelpText(delegate { return guide.Prompt; }, "提示词已复制。粘贴到 AI 对话，再填写出题要求或粘贴原题。", clipboardStatus);
+                actions.Children.Add(Action("复制 AI " + format + " 提示词", delegate {
+                    CopyHelpText(delegate { return prompt; }, "提示词已复制。粘贴到 AI 对话，再填写出题要求或粘贴原题。", clipboardStatus);
                 }, true));
             }
-            actions.Children.Add(Action("复制示例 XML", delegate {
-                CopyHelpText(ReadExample, "示例 XML 已复制。", clipboardStatus);
-            }, false));
             inner.Children.Add(actions);
             inner.Children.Add(clipboardStatus);
-            foreach (var section in guide.Sections)
+            if (!String.IsNullOrWhiteSpace(prompt))
             {
-                var title = Text(section.Title, 19, "Ink"); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 21, 0, 8); inner.Children.Add(title);
+                string promptLabel = "查看 AI " + format + " 提示词";
+                var promptBox = HelpCode(prompt, promptLabel);
+                promptBox.TextWrapping = TextWrapping.Wrap;
+                promptBox.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                promptBox.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+                promptBox.MaxHeight = 240;
+                inner.Children.Add(new Expander { Header = promptLabel, Content = promptBox, Foreground = Color("Ink") });
+            }
+            foreach (var section in sections)
+            {
+                var sectionTitle = Text(section.Title, 18, "Ink");
+                sectionTitle.FontWeight = FontWeights.SemiBold;
+                sectionTitle.Margin = new Thickness(0, 16, 0, 6);
+                inner.Children.Add(sectionTitle);
                 inner.Children.Add(Text(section.Text, 14, "Muted"));
                 if (!String.IsNullOrWhiteSpace(section.Code))
-                {
-                    var code = new TextBox { Text = section.Code, IsReadOnly = true, TextWrapping = TextWrapping.NoWrap, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, FontFamily = new FontFamily("Consolas, Courier New"), FontSize = 13 * Z, Background = Color("Tint"), Margin = new Thickness(0, 13, 0, 2), Padding = new Thickness(15), BorderBrush = Color("Line") };
-                    System.Windows.Automation.AutomationProperties.SetName(code, section.Title + " XML 示例"); inner.Children.Add(code);
-                }
+                    inner.Children.Add(HelpCode(section.Code, section.Title + " " + format + " 示例"));
             }
-            var version = Text("选择器 v" + guide.Version, 12, "Muted"); version.Margin = new Thickness(0, 25, 0, 0); inner.Children.Add(version);
-            page.Children.Add(Card(inner));
+            return inner;
+        }
+        TextBox HelpCode(string value, string label)
+        {
+            var code = new TextBox {
+                Text = value.TrimEnd('\r', '\n'), IsReadOnly = true, TextWrapping = TextWrapping.NoWrap,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                FontFamily = new FontFamily("Consolas, Courier New"), FontSize = 13 * Z,
+                Background = Color("Tint"), Margin = new Thickness(0, 13, 0, 2),
+                Padding = new Thickness(15), BorderBrush = Color("Line")
+            };
+            System.Windows.Automation.AutomationProperties.SetName(code, label);
+            return code;
         }
         void CopyHelpText(Func<string> getText, string success, TextBlock feedback)
         {
@@ -280,12 +340,26 @@ namespace Chooser
             }
             feedback.Visibility = Visibility.Visible;
         }
-        void ExportExample()
+        void ExportExample(string format, Func<string> getText)
         {
-            var dialog = new SaveFileDialog { Title = "保存示例 XML 题库", Filter = "XML 题库 (*.xml)|*.xml", FileName = "选择器-示例题库.xml" };
+            string extension = "." + format.ToLowerInvariant();
+            var dialog = new SaveFileDialog {
+                Title = "保存示例 " + format + " 题库", Filter = format + " 题库 (*" + extension + ")|*" + extension,
+                FileName = "选择器-示例题库" + extension
+            };
             if (dialog.ShowDialog(this) != true) return;
-            try { File.WriteAllText(dialog.FileName, ReadExample(), new UTF8Encoding(false)); MessageBox.Show(this, "示例题库已保存，可修改后导入。", "示例已保存", MessageBoxButton.OK, MessageBoxImage.Information); }
+            try
+            {
+                WriteExampleFile(dialog.FileName, format, getText());
+                MessageBox.Show(this, "示例题库已保存，可修改后导入。", "示例已保存", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
             catch (Exception error) { MessageBox.Show(this, "保存失败：" + error.Message, "保存失败", MessageBoxButton.OK, MessageBoxImage.Warning); }
+        }
+        internal static void WriteExampleFile(string path, string format, string text)
+        {
+            bool csv = format == "CSV";
+            if (csv) text = text.TrimStart('\uFEFF').Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+            File.WriteAllText(path, text, new UTF8Encoding(csv));
         }
         void ChangeZoom(double amount) { data.Zoom = Math.Max(0.85, Math.Min(1.5, Math.Round(Z + amount, 2))); Save(); Redraw(); }
         void ToggleFull()
@@ -334,9 +408,29 @@ namespace Chooser
                 bankPicker.Items.Add(new ComboBoxItem { Content = bank.Name + "  ·  " + bank.Questions.Count + " 题", Tag = bank.Id });
             }
             inner.Children.Add(bankPicker);
-            bankHint = Text("", 13, "Muted"); inner.Children.Add(bankHint);
+            var examFields = new Grid();
+            for (int column = 0; column < 3; column++) examFields.ColumnDefinitions.Add(new ColumnDefinition());
+            rangeStartBox = AddExamField(examFields, 0, "起始题号");
+            rangeEndBox = AddExamField(examFields, 1, "结束题号");
+            randomCountBox = AddExamField(examFields, 2, "随机抽题数（留空最多 20 题）");
+            inner.Children.Add(examFields);
+            var shuffle = SettingOption("随机选项", data.ShuffleOptions);
+            shuffle.Margin = new Thickness(0, 14, 0, 0);
+            shuffle.ToolTip = "打乱新一轮中每道题的选项顺序。续答保持原顺序。";
+            RoutedEventHandler saveShuffle = delegate {
+                data.ShuffleOptions = shuffle.IsChecked == true;
+                Save();
+            };
+            shuffle.Checked += saveShuffle;
+            shuffle.Unchecked += saveShuffle;
+            inner.Children.Add(shuffle);
+            bankHint = Text("", 13, "Error");
+            bankHint.Margin = new Thickness(0, 8, 0, 0);
+            bankHint.Visibility = Visibility.Collapsed;
+            inner.Children.Add(bankHint);
             var actions = Actions();
             startButton = Action("开始答题  →", delegate { Start(false); }, true); actions.Children.Add(startButton);
+            randomExamButton = Action("随机考试", delegate { Start(true); }, false); actions.Children.Add(randomExamButton);
             if (data.Active != null && ActiveBank != null)
             {
                 if (!data.Active.Completed || data.Active.FeedbackPending) actions.Children.Add(Action("继续上次进度", ShowQuestion, false));
@@ -364,11 +458,40 @@ namespace Chooser
         void UpdateBankHint()
         {
             var bank = SelectedBank;
-            startButton.IsEnabled = bank != null;
-            if (bank == null) { bankHint.Text = "请在设置中导入或新建题库。"; return; }
+            bool hasBank = bank != null && bank.Questions.Count > 0;
+            startButton.IsEnabled = randomExamButton.IsEnabled = hasBank;
+            rangeStartBox.IsEnabled = rangeEndBox.IsEnabled = randomCountBox.IsEnabled = hasBank;
+            randomCountBox.Clear();
+            if (!hasBank)
+            {
+                rangeStartBox.Clear();
+                rangeEndBox.Clear();
+                ShowExamError("请在设置的题库管理中导入或新建题库。");
+                return;
+            }
             int first, last;
             GetRange(bank, out first, out last);
-            bankHint.Text = "本轮范围  " + first + "–" + last + " 题";
+            rangeStartBox.Text = first.ToString();
+            rangeEndBox.Text = last.ToString();
+            ShowExamError("");
+        }
+
+        TextBox AddExamField(Grid fields, int column, string label)
+        {
+            var panel = new StackPanel { Margin = new Thickness(0, 0, column == 2 ? 0 : 12, 0) };
+            var input = new TextBox { MaxLength = 7, FontSize = 16 * Z };
+            System.Windows.Automation.AutomationProperties.SetName(input, label);
+            panel.Children.Add(Label(label));
+            panel.Children.Add(input);
+            Grid.SetColumn(panel, column);
+            fields.Children.Add(panel);
+            return input;
+        }
+
+        void ShowExamError(string error)
+        {
+            bankHint.Text = error;
+            bankHint.Visibility = error.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         }
         bool CanImport { get { return settingsUnlocked && (view == "settings" || view == "manage" || view == "bank"); } }
         void OpenSettings()
@@ -430,7 +553,7 @@ namespace Chooser
         {
             if (!settingsUnlocked) { ShowHome(); return; }
             Begin("settings");
-            var inner = Heading("设置", "调整答题选项和所选题库的考试范围。");
+            var inner = Heading("设置", "调整答题反馈或管理题库。");
             var options = Actions();
             var previous = SettingOption("允许上一题", data.AllowPreviousQuestion);
             var immediate = SettingOption("立即评分", QuizEngine.ImmediateScoring(data));
@@ -444,61 +567,18 @@ namespace Chooser
             inner.Children.Add(options);
             inner.Children.Add(Label("启用「允许上一题」会关闭立即评分。"));
 
-            var bank = SelectedBank;
-            TextBox firstBox = null, lastBox = null;
-            if (bank != null)
-            {
-                int first, last;
-                GetRange(bank, out first, out last);
-                var section = Text("考试范围", 19, "Ink");
-                section.Margin = new Thickness(0, 16, 0, 4);
-                inner.Children.Add(section);
-                inner.Children.Add(Label(bank.Name + " · 共 " + bank.Questions.Count + " 题"));
-                var range = new Grid();
-                range.ColumnDefinitions.Add(new ColumnDefinition());
-                range.ColumnDefinitions.Add(new ColumnDefinition());
-                var left = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
-                var right = new StackPanel();
-                firstBox = new TextBox { Text = first.ToString(), MaxLength = 7, FontSize = 16 * Z };
-                lastBox = new TextBox { Text = last.ToString(), MaxLength = 7, FontSize = 16 * Z };
-                System.Windows.Automation.AutomationProperties.SetName(firstBox, "起始题号");
-                System.Windows.Automation.AutomationProperties.SetName(lastBox, "结束题号");
-                left.Children.Add(Label("起始题号"));
-                left.Children.Add(firstBox);
-                right.Children.Add(Label("结束题号"));
-                right.Children.Add(lastBox);
-                Grid.SetColumn(right, 1);
-                range.Children.Add(left);
-                range.Children.Add(right);
-                inner.Children.Add(range);
-            }
-
             var error = Text("", 13, "Error");
             error.Margin = new Thickness(0, 8, 0, 0);
             inner.Children.Add(error);
-            Func<bool> saveSettings = delegate {
-                int first = 1, last = 0;
-                if (bank != null && (!Int32.TryParse(firstBox.Text, out first) ||
-                    !Int32.TryParse(lastBox.Text, out last) || first < 1 || last < first || last > bank.Questions.Count))
-                {
-                    error.Text = "请填写 1–" + bank.Questions.Count + " 之间的有效起止题号。";
-                    return false;
-                }
+            var actions = Actions();
+            actions.Children.Add(Action("保存设置", delegate {
                 var candidate = CloneState(data);
                 candidate.AllowPreviousQuestion = previous.IsChecked == true;
                 candidate.ImmediateScoring = immediate.IsChecked == true && !candidate.AllowPreviousQuestion;
                 candidate.ShowAnswers = answers.IsChecked == true;
-                candidate.RangeBankId = bank == null ? "" : bank.Id;
-                candidate.RangeStart = first;
-                candidate.RangeEnd = last;
-                try { CommitState(candidate); return true; }
-                catch (Exception ex) { error.Text = "设置保存失败：" + ex.Message; return false; }
-            };
-            var actions = Actions();
-            actions.Children.Add(Action("保存设置", delegate { if (saveSettings()) ShowHome(); }, true));
-            var exam = Action("随机考试", delegate { if (saveSettings()) Start(true); }, false);
-            exam.IsEnabled = bank != null;
-            actions.Children.Add(exam);
+                try { CommitState(candidate); ShowHome(); }
+                catch (Exception ex) { error.Text = "设置保存失败：" + ex.Message; }
+            }, true));
             actions.Children.Add(Action("管理题库", ShowManage, false));
             actions.Children.Add(Action("返回首页", ShowHome, false));
             inner.Children.Add(actions);
@@ -517,7 +597,11 @@ namespace Chooser
         void PickFiles()
         {
             if (!CanImport) return;
-            var dialog = new OpenFileDialog { Title = "导入 XML 题库", Filter = "XML 题库 (*.xml)|*.xml", Multiselect = true };
+            var dialog = new OpenFileDialog {
+                Title = "导入题库",
+                Filter = "题库文件 (*.xml;*.csv)|*.xml;*.csv|XML 题库 (*.xml)|*.xml|CSV 题库 (*.csv)|*.csv",
+                Multiselect = true
+            };
             if (dialog.ShowDialog(this) == true) ImportFiles(dialog.FileNames);
         }
         void ImportFiles(string[] paths)
@@ -529,8 +613,7 @@ namespace Chooser
             {
                 try
                 {
-                    if (!String.Equals(Path.GetExtension(path), ".xml", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("请选择 .xml 格式的题库。");
-                    var bank = XmlQuiz.ParseFile(path);
+                    var bank = ReadBankFile(path);
                     var existing = candidate.Banks.FirstOrDefault(b => b.Id == bank.Id);
                     if (existing != null) { candidate.SelectedBankId = existing.Id; duplicate++; continue; }
                     // Different contents with the same title are kept as a separate bank.
@@ -550,48 +633,52 @@ namespace Chooser
             if (errors.Count > 0) summary += "\n\n以下文件未导入：\n" + String.Join("\n", errors);
             MessageBox.Show(this, summary, "导入题库", MessageBoxButton.OK, errors.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
         }
+        static Bank ReadBankFile(string path)
+        {
+            string extension = Path.GetExtension(path);
+            if (String.Equals(extension, ".csv", StringComparison.OrdinalIgnoreCase)) return CsvQuiz.ParseFile(path);
+            if (String.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase)) return XmlQuiz.ParseFile(path);
+            throw new InvalidDataException("请选择 .xml 或 .csv 格式的题库。");
+        }
         bool CanReplaceProgress()
         {
             return data.Active == null || data.Active.Completed || MessageBox.Show(this, "开始新一轮将替换尚未完成的答题进度。已累计的错题次数会保留。\n\n继续开始？", "开始新一轮", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
         void Start(bool random)
         {
-            if (random && !settingsUnlocked) return;
             var bank = SelectedBank; if (bank == null) return;
             int start, end;
-            GetRange(bank, out start, out end);
+            if (!Int32.TryParse(rangeStartBox.Text, out start) || !Int32.TryParse(rangeEndBox.Text, out end) ||
+                start < 1 || end < start || end > bank.Questions.Count)
+            {
+                ShowExamError("请填写 1–" + bank.Questions.Count + " 之间的有效起止题号。");
+                return;
+            }
             int count = end - start + 1;
             if (random)
             {
-                int? picked = AskCount(start, end, count); if (!picked.HasValue) return; count = picked.Value;
+                int available = count;
+                if (String.IsNullOrWhiteSpace(randomCountBox.Text)) count = Math.Min(20, available);
+                else if (!Int32.TryParse(randomCountBox.Text, out count) || count < 1 || count > available)
+                {
+                    ShowExamError("随机抽题数应为 1–" + available + "。");
+                    randomCountBox.Focus();
+                    return;
+                }
             }
+            ShowExamError("");
             if (!CanReplaceProgress()) return;
-            var previous = data.Active;
-            data.Active = QuizEngine.CreateSession(bank, start, end, count, random, random ? "随机考试" : "顺序练习");
-            if (!Save()) { data.Active = previous; return; }
+            var candidate = CloneState(data);
+            candidate.RangeBankId = bank.Id;
+            candidate.RangeStart = start;
+            candidate.RangeEnd = end;
+            candidate.Active = QuizEngine.CreateSession(bank, start, end, count, random, random ? "随机考试" : "顺序练习");
+            if (candidate.ShuffleOptions) QuizEngine.ShuffleOptions(bank, candidate.Active);
+            try { CommitState(candidate); }
+            catch (Exception error) { ShowExamError("无法保存本轮考试：" + error.Message); return; }
             settingsUnlocked = false;
             questionListOpen = false;
             ShowQuestion();
-        }
-        int? AskCount(int start, int end, int maximum)
-        {
-            var dialog = new Window { Owner = this, Title = "随机考试", Width = 430, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Color("Surface"), Foreground = Color("Ink"), FontFamily = FontFamily };
-            dialog.Resources.MergedDictionaries.Add(Resources);
-            var body = new StackPanel { Margin = new Thickness(28) };
-            body.Children.Add(Text("随机考试", 23, "Ink"));
-            var sub = Text("从第 " + start + "–" + end + " 题中随机抽取，不重复出题。", 14, "Muted"); sub.Margin = new Thickness(0, 10, 0, 20); body.Children.Add(sub);
-            body.Children.Add(Label("抽取题数（1–" + maximum + "）"));
-            var input = new TextBox { Text = Math.Min(20, maximum).ToString(), MaxLength = 7 }; body.Children.Add(input);
-            var error = Text("", 12, "Error"); error.Margin = new Thickness(0, 8, 0, 0); body.Children.Add(error);
-            int? result = null;
-            var actions = Actions(); actions.Children.Add(Action("取消", delegate { dialog.Close(); }, false));
-            var confirm = Action("进入考试", delegate {
-                int number;
-                if (!Int32.TryParse(input.Text, out number) || number < 1 || number > maximum) { error.Text = "请输入 1–" + maximum + " 之间的整数。"; return; }
-                result = number; dialog.DialogResult = true;
-            }, true); confirm.IsDefault = true; actions.Children.Add(confirm); body.Children.Add(actions); dialog.Content = body;
-            dialog.Loaded += delegate { input.Focus(); input.SelectAll(); };
-            dialog.ShowDialog(); return result;
         }
 
         void ShowQuestion()
@@ -630,15 +717,18 @@ namespace Chooser
             navigation.Children.Add(QuestionList(session, position));
             inner.Children.Add(navigation);
             var stem = Text(question.Text, 23, "Ink"); stem.FontWeight = FontWeights.Medium; stem.Margin = new Thickness(0, 0, 0, 22); inner.Children.Add(stem);
-            foreach (var option in question.Options)
+            var displayedOptions = QuizEngine.DisplayOptions(question, session);
+            for (int index = 0; index < displayedOptions.Count; index++)
             {
+                var option = displayedOptions[index];
                 string id = option.Id;
+                string label = ChoiceLabel(option, index, session);
                 var row = new DockPanel { LastChildFill = true };
                 var marker = Text(question.Answers.Count > 1 ? "□" : "○", 20, "Muted"); marker.Margin = new Thickness(0, 0, 14, 0); marker.VerticalAlignment = VerticalAlignment.Center; marker.Width = 26;
                 DockPanel.SetDock(marker, Dock.Left); row.Children.Add(marker);
-                var content = Text(option.Id + ".  " + option.Text, 18, "Ink"); content.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(content);
+                var content = Text(label + ".  " + option.Text, 18, "Ink"); content.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(content);
                 var button = Action("", delegate { SelectOption(id); }, false); button.Content = row; button.HorizontalContentAlignment = HorizontalAlignment.Stretch; button.Padding = new Thickness(18, 14, 18, 14); button.Margin = new Thickness(0, 0, 0, 12);
-                System.Windows.Automation.AutomationProperties.SetName(button, option.Id + ". " + option.Text);
+                System.Windows.Automation.AutomationProperties.SetName(button, label + ". " + option.Text);
                 optionButtons[id] = button; optionMarkers[id] = marker; inner.Children.Add(button);
             }
             if (feedback || data.ShowAnswers)
@@ -648,9 +738,9 @@ namespace Chooser
                 {
                     var scoreText = Text((attempt.Correct ? "回答正确  +1 分" : "回答错误  0 分") + "  ·  当前得分 " + QuizEngine.Score(session) + " / " + session.QuestionIds.Count, 17, attempt.Correct ? "Success" : "Error");
                     scoreText.FontWeight = FontWeights.SemiBold; scoreText.Margin = new Thickness(0, 0, 0, 8); answerPanel.Children.Add(scoreText);
-                    answerPanel.Children.Add(Text("你的选择：" + AnswersText(question, attempt.Selected), 14, attempt.Correct ? "Success" : "Error"));
+                    answerPanel.Children.Add(Text("你的选择：" + AnswersText(question, attempt.Selected, session), 14, attempt.Correct ? "Success" : "Error"));
                 }
-                var correctAnswer = Text("正确答案：" + AnswersText(question, question.Answers), 15, "Success"); correctAnswer.FontWeight = FontWeights.Medium; answerPanel.Children.Add(correctAnswer);
+                var correctAnswer = Text("正确答案：" + AnswersText(question, question.Answers, session), 15, "Success"); correctAnswer.FontWeight = FontWeights.Medium; answerPanel.Children.Add(correctAnswer);
                 if (!String.IsNullOrWhiteSpace(question.Explanation))
                 {
                     var analysis = Text("解析：" + question.Explanation, 14, "Muted"); analysis.Margin = new Thickness(0, 8, 0, 0); answerPanel.Children.Add(analysis);
@@ -807,12 +897,20 @@ namespace Chooser
             Save();
             ShowResult();
         }
-        string AnswersText(Question question, IEnumerable<string> ids)
+        static string ChoiceLabel(Option option, int index, Session session)
+        {
+            if (!QuizEngine.OptionsAreShuffled(session)) return option.Id;
+            return index < 26 ? ((char)('A' + index)).ToString() : (index + 1).ToString();
+        }
+
+        string AnswersText(Question question, IEnumerable<string> ids, Session session = null)
         {
             var set = new HashSet<string>(ids ?? new List<string>());
-            return String.Join("、", question.Options.Where(o => set.Contains(o.Id)).Select(o => o.Id));
+            var options = QuizEngine.DisplayOptions(question, session);
+            return String.Join("、", options.Select((option, index) => set.Contains(option.Id)
+                ? ChoiceLabel(option, index, session) : null).Where(label => label != null));
         }
-        Border QuestionReview(Bank bank, Question question, IEnumerable<string> selected, string meta, bool expanded)
+        Border QuestionReview(Bank bank, Question question, IEnumerable<string> selected, string meta, bool expanded, Session session = null)
         {
             var inner = new StackPanel();
             var heading = new StackPanel();
@@ -821,14 +919,16 @@ namespace Chooser
             var expander = new Expander { Header = heading, IsExpanded = expanded, HorizontalContentAlignment = HorizontalAlignment.Stretch };
             var details = new StackPanel { Margin = new Thickness(24, 14, 4, 2) };
             var chosen = new HashSet<string>(selected ?? new List<string>());
-            foreach (var option in question.Options)
+            var displayedOptions = QuizEngine.DisplayOptions(question, session);
+            for (int index = 0; index < displayedOptions.Count; index++)
             {
+                var option = displayedOptions[index];
                 bool correct = question.Answers.Contains(option.Id), picked = chosen.Contains(option.Id);
-                var line = Text(option.Id + ".  " + option.Text + (correct ? "  ✓" : (picked ? "  ×" : "")), 15, correct ? "Success" : (picked ? "Error" : "Muted"));
+                var line = Text(ChoiceLabel(option, index, session) + ".  " + option.Text + (correct ? "  ✓" : (picked ? "  ×" : "")), 15, correct ? "Success" : (picked ? "Error" : "Muted"));
                 line.Margin = new Thickness(0, 0, 0, 8); details.Children.Add(line);
             }
-            details.Children.Add(Text("你的选择：" + (chosen.Count == 0 ? "未作答" : AnswersText(question, chosen)), 14, "Error"));
-            var answer = Text("正确答案：" + AnswersText(question, question.Answers), 14, "Success"); answer.FontWeight = FontWeights.SemiBold; details.Children.Add(answer);
+            details.Children.Add(Text("你的选择：" + (chosen.Count == 0 ? "未作答" : AnswersText(question, chosen, session)), 14, "Error"));
+            var answer = Text("正确答案：" + AnswersText(question, question.Answers, session), 14, "Success"); answer.FontWeight = FontWeights.SemiBold; details.Children.Add(answer);
             if (!String.IsNullOrWhiteSpace(question.Explanation))
             {
                 var explanation = Text("解析：" + question.Explanation, 14, "Muted"); explanation.Margin = new Thickness(0, 12, 0, 0); details.Children.Add(explanation);
@@ -862,7 +962,7 @@ namespace Chooser
             {
                 var question = bank.Questions.First(q => q.Id == attempt.QuestionId);
                 var record = data.Wrongs.FirstOrDefault(w => w.BankId == bank.Id && w.QuestionId == question.Id);
-                inner.Children.Add(QuestionReview(bank, question, attempt.Selected, "原题号 " + question.Number + "  ·  累计答错 " + (record == null ? 1 : record.Count) + " 次  ·  点击展开", false));
+                inner.Children.Add(QuestionReview(bank, question, attempt.Selected, "原题号 " + question.Number + "  ·  累计答错 " + (record == null ? 1 : record.Count) + " 次  ·  点击展开", false, s));
             }
             if (wrong == 0) inner.Children.Add(Text(unanswered == 0 ? "本次全部答对，继续保持。" : "已提交的题目均答对。", 15, "Success"));
             if (unanswered > 0)
@@ -876,6 +976,7 @@ namespace Chooser
             if (ids.Count == 0 || !CanReplaceProgress()) return;
             var candidate = CloneState(data);
             candidate.Active = new Session { BankId = bank.Id, Mode = mode, QuestionIds = new List<string>(ids) };
+            if (candidate.ShuffleOptions) QuizEngine.ShuffleOptions(bank, candidate.Active);
             candidate.SelectedBankId = bank.Id;
             CommitState(candidate);
             questionListOpen = false;
@@ -939,7 +1040,7 @@ namespace Chooser
             if (!settingsUnlocked) { ShowHome(); return; }
             Begin("manage");
             var inner = Heading("题库管理", "");
-            var actions = new WrapPanel(); actions.Children.Add(Action("返回设置", ShowSettings, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 XML", PickFiles, false));
+            var actions = new WrapPanel(); actions.Children.Add(Action("返回设置", ShowSettings, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 XML / CSV", PickFiles, false));
             actions.Children.Add(Action("备份全部数据", ExportBackup, false)); actions.Children.Add(Action("恢复数据备份", RestoreBackup, false)); inner.Children.Add(actions);
             var search = new TextBox { Text = managementQuery, FontSize = 15 * Z, Margin = new Thickness(0, 14, 0, 0) };
             System.Windows.Automation.AutomationProperties.SetName(search, "搜索题库名称或题干");
@@ -968,7 +1069,7 @@ namespace Chooser
                 }, false); delete.Foreground = Color("Error"); buttons.Children.Add(delete); row.Children.Add(buttons);
                 inner.Children.Add(new Border { Child = row, Padding = new Thickness(18), BorderBrush = Color("Line"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Margin = new Thickness(0, 12, 0, 0) });
             }
-            if (visible.Count == 0) inner.Children.Add(Text(data.Banks.Count == 0 ? "暂无题库，可新建或导入 XML。" : "没有匹配的题库。", 16, "Muted"));
+            if (visible.Count == 0) inner.Children.Add(Text(data.Banks.Count == 0 ? "暂无题库，可新建或导入题库。" : "没有匹配的题库。", 16, "Muted"));
             page.Children.Add(Card(inner));
         }
 
@@ -1034,6 +1135,7 @@ namespace Chooser
             data.Banks = candidate.Banks; data.Wrongs = candidate.Wrongs; data.Active = candidate.Active; data.SelectedBankId = candidate.SelectedBankId;
             data.Dark = candidate.Dark; data.Zoom = candidate.Zoom; data.ShowAnswers = candidate.ShowAnswers; data.ImmediateScoring = candidate.ImmediateScoring;
             data.AllowPreviousQuestion = candidate.AllowPreviousQuestion;
+            data.ShuffleOptions = candidate.ShuffleOptions;
             data.RangeBankId = candidate.RangeBankId;
             data.RangeStart = candidate.RangeStart;
             data.RangeEnd = candidate.RangeEnd;
@@ -1197,11 +1299,15 @@ namespace Chooser
             }
             if (data.Active.FeedbackPending) return;
             var q = QuizEngine.Current(ActiveBank, data.Active);
+            var options = QuizEngine.DisplayOptions(q, data.Active);
             string key = actualKey.ToString().ToUpperInvariant();
-            var exact = q.Options.FirstOrDefault(o => o.Id.Equals(key, StringComparison.OrdinalIgnoreCase));
-            if (exact != null) { SelectOption(exact.Id); e.Handled = true; return; }
+            for (int index = 0; index < options.Count; index++)
+            {
+                if (!ChoiceLabel(options[index], index, data.Active).Equals(key, StringComparison.OrdinalIgnoreCase)) continue;
+                SelectOption(options[index].Id); e.Handled = true; return;
+            }
             int number = actualKey >= Key.D1 && actualKey <= Key.D9 ? (int)actualKey - (int)Key.D1 : (actualKey >= Key.NumPad1 && actualKey <= Key.NumPad9 ? (int)actualKey - (int)Key.NumPad1 : -1);
-            if (number >= 0 && number < q.Options.Count) { SelectOption(q.Options[number].Id); e.Handled = true; }
+            if (number >= 0 && number < options.Count) { SelectOption(options[number].Id); e.Handled = true; }
         }
     }
 }

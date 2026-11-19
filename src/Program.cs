@@ -9,7 +9,7 @@ using System.Threading;
 [assembly: AssemblyDescription("离线选择题练习与课堂考试")]
 [assembly: AssemblyCompany("zlight106")]
 [assembly: AssemblyProduct("选择器")]
-[assembly: AssemblyVersion("1.5.0.0")]
+[assembly: AssemblyVersion("1.6.1.0")]
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
 
 namespace Chooser

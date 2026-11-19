@@ -2,7 +2,7 @@
 
 轻量的选择题练习与课堂考试工具，提供 Windows 单文件离线版和手机、平板、电脑通用的网页版。Go 标准库服务端内嵌网页、题库、图标及帮助，运行时无需安装 Go、Node.js、Python 或数据库。
 
-[桌面版 v1.5.0](https://github.com/zlight-GA106/chooser/releases/tag/v1.5.0) · [网页版和 Go 服务端 v1.4.0](https://github.com/zlight-GA106/chooser/releases/tag/v1.4.0) · [使用说明](使用说明.md) · [题库 XML 示例](assets/example.xml)
+[桌面版 v1.6.1](https://github.com/zlight-GA106/chooser/releases/tag/v1.6.1) · [网页版和 Go 服务端 v1.4.0](https://github.com/zlight-GA106/chooser/releases/tag/v1.4.0) · [使用说明](使用说明.md) · [CSV 示例](assets/example.csv) · [XML 示例](assets/example.xml)
 
 ## 功能与数据保存
 
@@ -11,7 +11,8 @@
 - 题库支持新建、导入、名称或内容搜索、分页查看、编辑及校验 XML、重命名、导出、删除。
 - 重命名保留记录；编辑保留未改变题目的错题次数，影响当前进度时先提示确认。
 - 内置“2025新版大信_选择题”196 题、XML 写作指南与完整示例。
-- 桌面版可在题号板点击题号跳转。黄色表示已标记，红色表示未完成，绿色表示已完成。显示答案、立即评分、上一题、题库管理、随机考试和考试范围均在密码保护的设置页。
+- 桌面 v1.6 在首页设置考试范围、随机抽题数和随机选项。显示答案、立即评分、上一题和题库管理在密码保护的设置页。
+- 桌面版支持一题一行的 UTF-8 CSV 题库。帮助页提供 CSV 和 XML 的指南、示例及可一键复制的 AI 提示词。
 - 原生 HTML/CSS/ES5 JavaScript，无前端框架和外部 CDN；缓存、gzip、ETag/304 节省流量。
 
 **数据属于各自设备。** 网页题库、错题、设置和进度优先保存在当前浏览器的 IndexedDB，导入、管理、答题和评分不上传服务器。没有账号、UID、多端同步、统一收卷或集中成绩后台。老师在自己浏览器创建题库不会自动分发给学生；可导出 XML 供学生导入，或修改内置题库后重新发布。
@@ -20,11 +21,11 @@
 
 ## 发布附件与部署选择
 
-桌面版从 [v1.5.0 发布页](https://github.com/zlight-GA106/chooser/releases/tag/v1.5.0) 下载，网页版及 Go 服务端从 [v1.4.0 发布页](https://github.com/zlight-GA106/chooser/releases/tag/v1.4.0) 下载。请选择对应 Release 的程序附件。
+桌面版从 [v1.6.1 发布页](https://github.com/zlight-GA106/chooser/releases/tag/v1.6.1) 下载，网页版及 Go 服务端从 [v1.4.0 发布页](https://github.com/zlight-GA106/chooser/releases/tag/v1.4.0) 下载。请选择对应 Release 的程序附件。
 
 | 文件 | 用途 |
 | --- | --- |
-| `chooser-desktop-v1.5.0.exe` | Windows 单文件便携版，直接发给老师 |
+| `chooser-desktop-v1.6.1.exe` | Windows 单文件便携版，直接发给老师 |
 | `chooser-server-v1.4.0-windows-amd64.exe` | Windows x86-64 网页服务端 |
 | `chooser-server-v1.4.0-linux-amd64` | Linux x86-64 网页服务端 |
 | `chooser-server-v1.4.0.zip` | Windows/Linux 服务端、部署说明和 Go 许可证合集 |
@@ -354,7 +355,7 @@ curl -f http://127.0.0.1:8088/healthz
 
 ## 十、Windows 桌面离线版
 
-把 `chooser-desktop-v1.5.0.exe` 放到 Windows 10/11 的可写目录，双击打开。程序使用 .NET Framework 4.8，已内置默认题库和帮助。
+把 `chooser-desktop-v1.6.1.exe` 放到 Windows 10/11 的可写目录，双击打开。程序使用 .NET Framework 4.8，已内置默认题库和帮助。下载的 CSV 示例可用 Excel 打开。
 
 题库、进度、标记和错题记录在正常退出并保存完成后随 EXE 一起携带。移动文件前请先关闭程序。在原电脑首次打开新版时，可迁移旧版默认路径下的缓存。升级时可先导出数据备份，再在新版恢复。仍可用 `--data-dir <目录>` 指定独立的 JSON 数据目录。
 
@@ -392,12 +393,13 @@ ARM64 Linux 使用 `GOOS=linux GOARCH=arm64`。Windows PowerShell 从仓库根�
 
 ```powershell
 .\tests\run-management-core.ps1
+.\tests\run-csv-core.ps1
 .\tests\run-portable-store.ps1
 .\tests\desktop-v1.4-run-management.ps1
 .\tests\desktop-run-options.ps1
 .\tests\desktop-v1.3-run-help.ps1
 .\tests\run-ui-tests.ps1
-Start-Process -FilePath '.\选择器单文件版v1.5.exe' -ArgumentList '--self-test', 'test-report.txt' -Wait
+Start-Process -FilePath '.\选择器单文件版v1.6.1.exe' -ArgumentList '--self-test', 'test-report.txt' -Wait
 
 # Node.js 仅用于开发测试
 node web/tests/core-node-tests.js

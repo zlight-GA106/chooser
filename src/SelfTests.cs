@@ -194,6 +194,53 @@ namespace Chooser
                     Check(ordered.QuestionIds.SequenceEqual(bank.Questions.Skip(39).Take(4).Select(q => q.Id)), "顺序练习题号不符。");
                 });
 
+                test("随机选项固定本轮顺序，续答、跳题及判分保留原选项标识", delegate
+                {
+                    Bank bank = XmlQuiz.ParseFile(samplePath);
+                    Question[] questions = bank.Questions.GroupBy(question => question.Options.Count)
+                        .Select(group => group.First()).ToArray();
+                    AppState state = State(bank);
+                    state.ShuffleOptions = true;
+                    var session = new Session { BankId = bank.Id, QuestionIds = questions.Select(question => question.Id).ToList() };
+                    state.Active = session;
+                    Check(!QuizEngine.OptionsAreShuffled(session) &&
+                        QuizEngine.DisplayOptions(questions[0], session).SequenceEqual(questions[0].Options),
+                        "未随机的答题记录应保持题库顺序。");
+
+                    QuizEngine.ShuffleOptions(bank, session);
+                    Check(QuizEngine.OptionsAreShuffled(session), "本轮随机顺序未初始化。");
+                    var expectedOrder = new Dictionary<string, string[]>();
+                    foreach (Question question in questions)
+                    {
+                        string[] ids = QuizEngine.DisplayOptions(question, session).Select(option => option.Id).ToArray();
+                        Check(ids.Length == question.Options.Count && new HashSet<string>(ids).SetEquals(question.Options.Select(option => option.Id)),
+                            "选项随机时发生遗漏或重复。");
+                        expectedOrder.Add(question.Id, ids);
+                    }
+                    QuizEngine.ShuffleOptions(bank, session);
+                    Check(QuizEngine.DisplayOptions(questions[0], session).Select(option => option.Id).SequenceEqual(expectedOrder[questions[0].Id]),
+                        "已经开始的本轮被重新打乱。");
+
+                    session.Draft = questions[0].Answers.ToList();
+                    QuizEngine.Jump(session, 1);
+                    var store = new Store(Path.Combine(temporary, "shuffle-options"));
+                    store.Save(state);
+                    AppState restored = store.Load();
+                    Check(restored.ShuffleOptions, "随机选项偏好没有保存。");
+                    restored.ShuffleOptions = false;
+                    foreach (Question question in restored.Banks.Single().Questions.Where(question => expectedOrder.ContainsKey(question.Id)))
+                        Check(QuizEngine.DisplayOptions(question, restored.Active).Select(option => option.Id).SequenceEqual(expectedOrder[question.Id]),
+                            "恢复旧轮次后选项顺序改变。");
+
+                    QuizEngine.Jump(restored.Active, 0);
+                    Check(restored.Active.Draft.SequenceEqual(questions[0].Answers), "随机选项无法恢复正在编辑的答案。");
+                    QuizEngine.Submit(restored, restored.Active, restored.Banks.Single(), restored.Active.Draft);
+                    Check(QuizEngine.Score(restored.Active) == 1, "随机选项影响正误判定。");
+                    List<string> corruptOrder = restored.Active.ShuffledOptionIds[questions[0].Id];
+                    corruptOrder[0] = corruptOrder[1];
+                    Reject(delegate { store.Save(restored); }, "缓存接受了重复的随机选项。");
+                });
+
                 test("空答案和非法选项不提交、不推进进度", delegate
                 {
                     Bank bank = XmlQuiz.Parse(TwoQuestions, "test.xml");

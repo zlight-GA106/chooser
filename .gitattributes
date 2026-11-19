@@ -1,0 +1,2 @@
+# Keep the Excel sample's UTF-8 BOM and Windows line endings in the downloaded file.
+/assets/example.csv -text whitespace=cr-at-eol

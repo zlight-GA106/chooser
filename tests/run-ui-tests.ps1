@@ -6,7 +6,7 @@ $wpfPath = Join-Path $frameworkPath 'WPF'
 $runnerPath = Join-Path $testPath 'UiIntegration.exe'
 $references = @('System.dll', 'System.Core.dll', 'System.Xml.dll', 'System.Xml.Linq.dll', 'System.Runtime.Serialization.dll', 'System.Xaml.dll') | ForEach-Object { '/reference:' + (Join-Path $frameworkPath $_) }
 $references += @('PresentationCore.dll', 'PresentationFramework.dll', 'WindowsBase.dll') | ForEach-Object { '/reference:' + (Join-Path $wpfPath $_) }
-$sourceFiles = @((Join-Path $rootPath 'src\Core.cs'), (Join-Path $rootPath 'src\MainWindow.cs'), (Join-Path $testPath 'UiIntegration.cs'))
+$sourceFiles = @((Join-Path $rootPath 'src\Core.cs'), (Join-Path $rootPath 'src\CsvQuiz.cs'), (Join-Path $rootPath 'src\MainWindow.cs'), (Join-Path $testPath 'UiIntegration.cs'))
 & (Join-Path $frameworkPath 'csc.exe') /nologo /target:exe /platform:anycpu /utf8output /codepage:65001 /main:Chooser.UiIntegration ('/out:' + $runnerPath) @references @sourceFiles
 if ($LASTEXITCODE -ne 0) { throw '界面验证程序编译失败。' }
 try {

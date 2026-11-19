@@ -5,8 +5,8 @@ $wpfPath = Join-Path $frameworkPath 'WPF'
 $runnerPath = Join-Path $PSScriptRoot 'desktop-v1.4-management-runner.exe'
 $references = @('System.dll','System.Core.dll','System.Xml.dll','System.Xml.Linq.dll','System.Runtime.Serialization.dll','System.Xaml.dll') | ForEach-Object { '/reference:' + (Join-Path $frameworkPath $_) }
 $references += @('PresentationCore.dll','PresentationFramework.dll','WindowsBase.dll') | ForEach-Object { '/reference:' + (Join-Path $wpfPath $_) }
-$resources = @(('/resource:' + (Join-Path $rootPath 'assets\xml-guide.json') + ',xml-guide.json'),('/resource:' + (Join-Path $rootPath 'assets\example.xml') + ',example.xml'))
-$sources = @((Join-Path $rootPath 'src\Core.cs'),(Join-Path $rootPath 'src\MainWindow.cs'),(Join-Path $PSScriptRoot 'desktop-v1.4-management.cs'))
+$resources = @('xml-guide.json', 'example.xml', 'example.csv') | ForEach-Object { '/resource:' + (Join-Path $rootPath ('assets\' + $_)) + ',' + $_ }
+$sources = @((Join-Path $rootPath 'src\Core.cs'),(Join-Path $rootPath 'src\CsvQuiz.cs'),(Join-Path $rootPath 'src\MainWindow.cs'),(Join-Path $PSScriptRoot 'desktop-v1.4-management.cs'))
 & (Join-Path $frameworkPath 'csc.exe') /nologo /target:exe /platform:anycpu /utf8output /codepage:65001 /main:Chooser.DesktopV14Management ('/out:' + $runnerPath) @references @resources @sources
 if ($LASTEXITCODE -ne 0) { throw '题库管理验证编译失败。' }
 try {

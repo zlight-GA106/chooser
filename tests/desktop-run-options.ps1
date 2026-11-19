@@ -6,7 +6,7 @@ $wpfPath = Join-Path $frameworkPath 'WPF'
 $runnerPath = Join-Path $testPath 'desktop-options-runner.exe'
 $references = @('System.dll', 'System.Core.dll', 'System.Xml.dll', 'System.Xml.Linq.dll', 'System.Runtime.Serialization.dll', 'System.Xaml.dll') | ForEach-Object { '/reference:' + (Join-Path $frameworkPath $_) }
 $references += @('PresentationCore.dll', 'PresentationFramework.dll', 'WindowsBase.dll') | ForEach-Object { '/reference:' + (Join-Path $wpfPath $_) }
-$sources = @((Join-Path $rootPath 'src\Core.cs'), (Join-Path $rootPath 'src\MainWindow.cs'), (Join-Path $testPath 'desktop-options.cs'))
+$sources = @((Join-Path $rootPath 'src\Core.cs'), (Join-Path $rootPath 'src\CsvQuiz.cs'), (Join-Path $rootPath 'src\MainWindow.cs'), (Join-Path $testPath 'desktop-options.cs'))
 & (Join-Path $frameworkPath 'csc.exe') /nologo /target:exe /platform:anycpu /utf8output /codepage:65001 /main:Chooser.DesktopOptions ('/out:' + $runnerPath) @references @sources
 if ($LASTEXITCODE -ne 0) { throw '选项验证程序编译失败。' }
 try {

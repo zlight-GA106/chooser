@@ -9,6 +9,7 @@
 .openai/
 .sites-runtime/
 .sites-checkout/
+.chooser-recovery/
 node_modules/
 .env
 .env.*

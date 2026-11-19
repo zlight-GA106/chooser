@@ -67,6 +67,7 @@ namespace Chooser
         [DataMember(EmitDefaultValue = false)] public string FeedbackQuestionId { get; set; }
         [DataMember(EmitDefaultValue = false)] public Dictionary<string, List<string>> OtherDrafts { get; set; }
         [DataMember(EmitDefaultValue = false)] public List<string> MarkedQuestionIds { get; set; }
+        [DataMember(EmitDefaultValue = false)] public Dictionary<string, List<string>> ShuffledOptionIds { get; set; }
         public Session()
         {
             BankId = Mode = "";
@@ -100,6 +101,7 @@ namespace Chooser
         [DataMember] public double Zoom { get; set; }
         [DataMember] public bool ShowAnswers { get; set; }
         [DataMember] public bool ImmediateScoring { get; set; }
+        [DataMember(EmitDefaultValue = false)] public bool ShuffleOptions { get; set; }
         [DataMember(Name = "AllowPreviousQuestion", EmitDefaultValue = false)] private bool? allowPreviousQuestion;
         [DataMember(EmitDefaultValue = false)] public string RangeBankId { get; set; }
         [DataMember(EmitDefaultValue = false)] public int RangeStart { get; set; }
@@ -439,15 +441,54 @@ namespace Chooser
             {
                 // Cryptographic rejection sampling avoids repeated random seeds and modulo bias.
                 using (RandomNumberGenerator generator = RandomNumberGenerator.Create())
-                {
-                    for (int i = ids.Count - 1; i > 0; i--)
-                    {
-                        int j = RandomIndex(generator, i + 1);
-                        string temporary = ids[i]; ids[i] = ids[j]; ids[j] = temporary;
-                    }
-                }
+                    ShuffleIds(ids, generator);
             }
             return new Session { BankId = bank.Id, Mode = mode ?? "顺序练习", QuestionIds = ids.Take(count).ToList() };
+        }
+
+        public static void ShuffleOptions(Bank bank, Session session)
+        {
+            if (bank == null || session == null || bank.Id != session.BankId)
+                throw new InvalidOperationException("答题进度与题库不匹配。");
+            // A session's option order must remain stable for review, resume, and restores.
+            if (OptionsAreShuffled(session)) return;
+            var questions = bank.Questions.ToDictionary(question => question.Id, StringComparer.Ordinal);
+            var order = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            using (RandomNumberGenerator generator = RandomNumberGenerator.Create())
+            {
+                foreach (string id in session.QuestionIds)
+                {
+                    var options = questions[id].Options.Select(option => option.Id).ToList();
+                    ShuffleIds(options, generator);
+                    order.Add(id, options);
+                }
+            }
+            session.ShuffledOptionIds = order;
+        }
+
+        public static bool OptionsAreShuffled(Session session)
+        {
+            return session != null && session.ShuffledOptionIds != null;
+        }
+
+        public static IList<Option> DisplayOptions(Question question, Session session)
+        {
+            List<string> order;
+            if (!OptionsAreShuffled(session) || !session.ShuffledOptionIds.TryGetValue(question.Id, out order))
+                return question.Options;
+            var options = question.Options.ToDictionary(option => option.Id, StringComparer.Ordinal);
+            return order.Select(id => options[id]).ToList();
+        }
+
+        private static void ShuffleIds(List<string> ids, RandomNumberGenerator generator)
+        {
+            for (int i = ids.Count - 1; i > 0; i--)
+            {
+                int j = RandomIndex(generator, i + 1);
+                string temporary = ids[i];
+                ids[i] = ids[j];
+                ids[j] = temporary;
+            }
         }
 
         private static int RandomIndex(RandomNumberGenerator generator, int length)
@@ -728,7 +769,7 @@ namespace Chooser
                 {
                     Serializer().WriteObject(stream, state);
                     if (stream.Length > MaxStateBytes)
-                        throw new IOException("本地缓存超过 256 MB，无法保存。原缓存及备份未被覆盖，请先导出并清理不再使用的题库。");
+                        throw new SerializationException("本地缓存超过 256 MB，无法保存。原缓存及备份未被覆盖，请先导出并清理不再使用的题库。");
                     stream.Flush(true);
                 }
                 // Replace is atomic on the local Windows filesystem and preserves the prior snapshot.
@@ -811,6 +852,19 @@ namespace Chooser
             var questions = activeBank.Questions.ToDictionary(q => q.Id, StringComparer.Ordinal);
             var roundIds = new HashSet<string>(session.QuestionIds, StringComparer.Ordinal);
             if (roundIds.Any(id => id == null || !questions.ContainsKey(id))) throw new SerializationException("缓存进度中的题目不存在。");
+            if (session.ShuffledOptionIds != null)
+            {
+                if (session.ShuffledOptionIds.Count != roundIds.Count)
+                    throw new SerializationException("缓存随机选项的题目数不一致。");
+                foreach (var entry in session.ShuffledOptionIds)
+                {
+                    if (!roundIds.Contains(entry.Key) || entry.Value == null)
+                        throw new SerializationException("缓存随机选项的题目无效。");
+                    var originalIds = new HashSet<string>(questions[entry.Key].Options.Select(option => option.Id), StringComparer.Ordinal);
+                    if (entry.Value.Count != originalIds.Count || !originalIds.SetEquals(entry.Value))
+                        throw new SerializationException("缓存随机选项的内容无效。");
+                }
+            }
             var submitted = new HashSet<string>(StringComparer.Ordinal);
             foreach (Attempt attempt in session.Attempts)
             {
