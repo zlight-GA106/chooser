@@ -50,14 +50,27 @@ namespace Chooser
                     Check(!state.Active.FeedbackPending, "旧进度默认评分状态不为关闭。"); state.Active = null; store.Save(state);
                     window = new MainWindow(store, state);
                 });
-                Test("首页两个选项可独立勾选并持久保存", delegate {
-                    Find<CheckBox>().Single(c => (string)c.Content == "显示答案").IsChecked = true;
-                    Check(state.ShowAnswers && store.Load().ShowAnswers && !state.ImmediateScoring, "显示答案未独立保存。");
-                    Find<CheckBox>().Single(c => (string)c.Content == "立即评分").IsChecked = true;
-                    Check(state.ImmediateScoring && store.Load().ImmediateScoring, "立即评分未保存。"); Render("desktop-home-options");
+                Test("上一题与立即评分互斥，设置保存后自动锁定", delegate {
+                    ShowUnlockedSettings();
+                    Option("显示答案").IsChecked = true;
+                    var previous = Option("允许上一题");
+                    var immediate = Option("立即评分");
+                    Check(previous.IsChecked == true && !immediate.IsEnabled, "默认上一题开启时仍可启用立即评分。");
+                    previous.IsChecked = false;
+                    Check(immediate.IsEnabled, "关闭上一题后立即评分仍禁用。");
+                    immediate.IsChecked = true;
+                    previous.IsChecked = true;
+                    Check(immediate.IsChecked == false && !immediate.IsEnabled, "重新开启上一题未取消立即评分。");
+                    previous.IsChecked = false;
+                    immediate.IsChecked = true;
+                    Render("desktop-home-options");
+                    SaveSettings();
+                    AppState saved = store.Load();
+                    Check(state.ShowAnswers && saved.ShowAnswers && saved.ImmediateScoring && !saved.AllowPreviousQuestion, "互斥选项未持久保存。");
+                    Check(!Field<bool>("settingsUnlocked"), "返回首页后设置未重新锁定。");
                 });
                 Test("显示答案：提交前显示标准答案及解析，不增加得分或错题", delegate {
-                    Field<TextBox>("rangeEnd").Text = "3"; Call("Start", false);
+                    Call("Start", false);
                     Check(AllText().Contains("正确答案：B") && AllText().Contains("2 + 2 = 4"), "题目未展示答案或解析。");
                     Check(state.Active.Position == 0 && state.Active.Attempts.Count == 0 && state.Wrongs.Count == 0, "仅展示答案就被计分。");
                     Check((string)Field<Button>("nextButton").Content == "提交答案  →", "立即评分的提交按钮不符。");
@@ -73,7 +86,7 @@ namespace Chooser
                 });
                 Test("关闭重开后恢复同一评分；关闭立即评分选项也不丢失已提交反馈", delegate {
                     Call("ShowHome"); window.Close(); state = store.Load(); window = new MainWindow(store, state);
-                    Find<CheckBox>().Single(c => (string)c.Content == "立即评分").IsChecked = false;
+                    ShowUnlockedSettings(); Option("立即评分").IsChecked = false; SaveSettings();
                     Call("ShowQuestion"); Check(state.Active.FeedbackPending && AllText().Contains("回答错误  0 分"), "重开或关选项丢失本题反馈。");
                     Call("SubmitCurrent"); Check(!state.Active.FeedbackPending && state.Active.Position == 1 && state.Active.Attempts.Count == 1, "下一题重复计分。");
                     Call("SubmitCurrent"); Check(state.Active.Position == 1 && state.Active.Attempts.Count == 1 && state.Wrongs.Single().Count == 1, "无草稿连点后重复作答。");
@@ -118,6 +131,17 @@ namespace Chooser
         static void Reject(AppState invalid) { bool rejected = false; try { store.Save(invalid); } catch (System.Runtime.Serialization.SerializationException) { rejected = true; } Check(rejected, "无效评分状态未拒绝。"); }
         static T Field<T>(string name) { return (T)typeof(MainWindow).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(window); }
         static void Call(string name, params object[] args) { typeof(MainWindow).GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(window, args); Drain(); }
+        static CheckBox Option(string text) { return Find<CheckBox>().Single(option => Equals(option.Content, text)); }
+        static void ShowUnlockedSettings()
+        {
+            typeof(MainWindow).GetField("settingsUnlocked", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(window, true);
+            Call("ShowSettings");
+        }
+        static void SaveSettings()
+        {
+            Find<Button>().Single(button => Equals(button.Content, "保存设置")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Drain();
+        }
         static void Drain() { Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.Background, new Action(delegate { })); if (dispatcherError != null) throw dispatcherError; }
         static IEnumerable<DependencyObject> Descendants(DependencyObject parent) { yield return parent; foreach (object value in LogicalTreeHelper.GetChildren(parent)) { DependencyObject child = value as DependencyObject; if (child != null) foreach (var descendant in Descendants(child)) yield return descendant; } }
         static IEnumerable<T> Find<T>() where T : DependencyObject { return Descendants((DependencyObject)window.Content).OfType<T>(); }

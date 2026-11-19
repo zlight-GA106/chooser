@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows;
@@ -10,7 +9,7 @@ using System.Threading;
 [assembly: AssemblyDescription("离线选择题练习与课堂考试")]
 [assembly: AssemblyCompany("zlight106")]
 [assembly: AssemblyProduct("选择器")]
-[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyVersion("1.5.0.0")]
 [assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
 
 namespace Chooser
@@ -41,12 +40,14 @@ namespace Chooser
                 finally { if (temporary != null) File.Delete(temporary); }
             }
 
-            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChooserClassroom");
+            string legacyDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ChooserClassroom");
+            string executable = Assembly.GetExecutingAssembly().Location;
+            string directory = null;
             for (int i = 0; i + 1 < args.Length; i++)
                 if (args[i] == "--data-dir") directory = Path.GetFullPath(args[i + 1]);
             string mutexName;
             using (var sha = System.Security.Cryptography.SHA256.Create())
-                mutexName = "Local\\ChooserClassroom-" + BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(directory.ToLowerInvariant()))).Replace("-", "");
+                mutexName = "Local\\ChooserClassroom-" + BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes((directory ?? executable).ToLowerInvariant()))).Replace("-", "");
             bool created;
             using (var single = new Mutex(true, mutexName, out created))
             {
@@ -63,10 +64,10 @@ namespace Chooser
                         MessageBox.Show("操作未完成：\n" + e.Exception.Message, "选择器", MessageBoxButton.OK, MessageBoxImage.Warning);
                         e.Handled = true;
                     };
-                    var store = new Store(directory);
+                    Store store = directory == null ? new PortableStore(executable, legacyDirectory) : new Store(directory);
                     var state = store.Load();
                     // Only a genuinely new data directory gets the built-in bank. An empty library stays empty.
-                    if (state.Banks.Count == 0 && !File.Exists(Path.Combine(directory, "state.json")))
+                    if (!store.HasSnapshot)
                     {
                         var bank = XmlQuiz.Parse(DefaultXml(), "2025新版大信_选择题.xml");
                         state.Banks.Add(bank);
@@ -79,7 +80,7 @@ namespace Chooser
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("无法启动选择器：\n" + e.Message + "\n\n数据目录：" + directory, "选择器", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("无法启动选择器：\n" + e.Message + "\n\n位置：" + (directory ?? executable), "选择器", MessageBoxButton.OK, MessageBoxImage.Error);
                     return 1;
                 }
                 finally { single.ReleaseMutex(); }

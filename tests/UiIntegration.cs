@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -55,19 +56,42 @@ namespace Chooser
                 state = store.Load();
                 window = new MainWindow(store, state);
 
-                Test("首页选择题库、默认题号范围和轻量离线入口", delegate
+                Test("首页保留答题入口，考试选项只在设置页出现", delegate
                 {
                     Check(Field<string>("view") == "home", "初始页面不是首页。");
-                    Check(Field<TextBox>("rangeStart").Text == "1" && Field<TextBox>("rangeEnd").Text == "3", "题号范围未自动填入。");
                     Check(Field<Button>("startButton").IsEnabled, "已有题库时开始按钮不可用。");
+                    Check(Find<Button>().All(b => !Equals(b.Content, "管理题库") && !Equals(b.Content, "随机考试")) && !Find<CheckBox>().Any(), "首页仍暴露受保护的考试选项。");
+                    Call("ShowManage");
+                    Check(Field<string>("view") == "home", "锁定时从首页可以直接进入管理。");
                     Check(!AllText().Contains("UID") && !AllText().Contains("多端同步"), "界面残留 UID 或同步入口。");
                     Render("integration-home");
                 });
 
-                Test("Start(false) 使用首页 1–3 范围；单选草稿自动持久化", delegate
+                Test("设置密码拒绝错误输入，范围经过校验并保存", delegate
                 {
-                    Field<TextBox>("rangeStart").Text = "1";
-                    Field<TextBox>("rangeEnd").Text = "3";
+                    string password = Environment.GetEnvironmentVariable("CHOOSER_TEST_SETTINGS_PASSWORD");
+                    bool authenticated = OpenSettingsAndCheckPassword(password);
+                    if (!authenticated)
+                    {
+                        Check(Field<string>("view") == "home", "取消密码后进入设置。");
+                        Report.Add("SKIP  未提供 CHOOSER_TEST_SETTINGS_PASSWORD，跳过正确密码的验证。");
+                        ShowUnlockedSettings();
+                    }
+                    Check(Field<string>("view") == "settings", "正确密码未进入设置。");
+                    TextBox first = Find<TextBox>().Single(t => AutomationProperties.GetName(t) == "起始题号");
+                    TextBox last = Find<TextBox>().Single(t => AutomationProperties.GetName(t) == "结束题号");
+                    Check(first.Text == "1" && last.Text == "3", "默认考试范围不是全部题目。");
+                    first.Text = "0";
+                    Click(Button("保存设置"));
+                    Check(Field<string>("view") == "settings" && AllText().Contains("有效起止题号"), "无效范围未留在设置页。");
+                    first.Text = "1";
+                    Click(Button("保存设置"));
+                    Check(Field<string>("view") == "home" && !Field<bool>("settingsUnlocked"), "保存并返回首页后未重新锁定设置。");
+                    Check(store.Load().RangeEnd == 3, "考试范围未持久化。");
+                });
+
+                Test("顺序练习使用保存的范围，单选草稿自动持久化", delegate
+                {
                     Call("Start", false);
                     Check(Field<string>("view") == "quiz" && state.Active.QuestionIds.Count == 3, "首页开始未创建三题练习。");
                     Check(AllText().Contains("单选  ·  1 分"), "单选题型或一题一分标记缺失。");
@@ -77,8 +101,31 @@ namespace Chooser
                     Check(store.Load().Active.Draft.SequenceEqual(new[] { "A" }), "选择后草稿未写入磁盘。");
                     Check(state.Wrongs.Count == 0, "尚未提交便累计错题。");
                     Render("integration-quiz-single");
+                });
+
+                Test("题号板可跳到每题，上一题保留草稿，标记颜色覆盖完成状态", delegate
+                {
+                    Find<Expander>().Single().IsExpanded = true;
+                    Drain();
+                    Check(QuestionLink(1, "未完成").Foreground == window.Resources["Error"] as Brush, "未提交草稿不是红色。");
+                    Click(Button("☆  标记本题"));
+                    Check(QuestionLink(1, "已标记").Foreground == window.Resources["Mark"] as Brush, "标记题不是黄色。");
+                    Click(QuestionLink(3, "未完成"));
+                    Check(state.Active.Position == 2 && state.Active.Draft.Count == 0, "题号链接未跳转到第三题或串联了草稿。");
+                    Click(Button("☆  标记本题"));
+                    Click(QuestionLink(2, "未完成"));
+                    Click(Button("←  上一题"));
+                    Check(state.Active.Position == 0 && state.Active.Draft.SequenceEqual(new[] { "A" }), "上一题未还原该题已选选项。");
                     Call("SubmitCurrent");
                     Check(state.Active.Position == 1 && state.Wrongs.Single().Count == 1, "提交单选后错题次数或位置不符。");
+                    Check(QuestionLink(1, "已标记").Foreground == window.Resources["Mark"] as Brush, "已提交的标记题不是黄色。");
+                    Click(QuestionLink(1, "已标记"));
+                    Click(Button("★  取消标记"));
+                    Check(QuestionLink(1, "已完成").Foreground == window.Resources["Success"] as Brush, "取消标记的已完成题不是绿色。");
+                    Check(Field<Dictionary<string, Button>>("optionButtons").Values.All(b => !b.IsHitTestVisible), "跳回已完成的题目仍可以改选。");
+                    Click(Field<Button>("nextButton"));
+                    Check(state.Active.Position == 1 && state.Wrongs.Single().Count == 1, "重新浏览已完成题重复计分。");
+                    Render("integration-question-board");
                 });
 
                 Test("多选控件、保存返回、重开窗口后恢复同题草稿", delegate
@@ -170,6 +217,7 @@ namespace Chooser
 
                 Test("随机考试真实模态控件：默认 3，拒绝 4，确认 2 返回有效数量", delegate
                 {
+                    ShowUnlockedSettings();
                     // Give the owner a hidden HWND; no desktop input, activation, or OS UI Automation.
                     new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle();
                     Exception modalError = null;
@@ -198,9 +246,9 @@ namespace Chooser
                             else foreach (Window remaining in Application.Current.Windows.Cast<Window>().Where(w => w != window && w.Title == "随机考试").ToList()) remaining.Close();
                         }
                     }));
-                    object result = typeof(MainWindow).GetMethod("AskCount", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(window, new object[] { 1, 3, 3 });
+                    Click(Button("随机考试"));
                     if (modalError != null) throw new InvalidOperationException("随机考试模态控件验证失败", modalError);
-                    Check(result != null && (int)result == 2, "确认有效抽题数量后未返回 2。");
+                    Check(Field<string>("view") == "quiz" && state.Active.Mode == "随机考试" && state.Active.QuestionIds.Count == 2, "确认有效抽题数量后未开始 2 题考试。");
                 });
 
                 Report.Add("SKIP  提前交卷确认由真实 Windows 界面验收；提前结算计分与持久化已有核心测试覆盖。");
@@ -246,6 +294,53 @@ namespace Chooser
             if (dispatchError != null) throw new InvalidOperationException("WPF 调度异常", dispatchError);
         }
         private static void Choose(string id) { Click(Field<Dictionary<string, Button>>("optionButtons")[id]); }
+        private static Button QuestionLink(int number, string status)
+        {
+            return Find<Button>().Single(b => Equals(b.Content, "● " + number) && AutomationProperties.GetName(b).StartsWith("第 " + number + " 题 · " + status, StringComparison.Ordinal));
+        }
+
+        private static void ShowUnlockedSettings()
+        {
+            typeof(MainWindow).GetField("settingsUnlocked", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(window, true);
+            Call("ShowSettings");
+        }
+
+        private static bool OpenSettingsAndCheckPassword(string validPassword)
+        {
+            new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle();
+            Exception failure = null;
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(delegate
+            {
+                Window dialog = null;
+                try
+                {
+                    dialog = Application.Current.Windows.Cast<Window>().Single(candidate => candidate != window && candidate.Title == "设置密码");
+                    var controls = Descendants((DependencyObject)dialog.Content).ToList();
+                    PasswordBox field = controls.OfType<PasswordBox>().Single();
+                    Button submit = controls.OfType<Button>().Single(button => Equals(button.Content, "进入设置"));
+                    field.Password = "invalid-classroom-settings-password";
+                    submit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                    Check(dialog.IsVisible && !Field<bool>("settingsUnlocked") && field.Password.Length == 0 &&
+                        controls.OfType<TextBlock>().Any(control => control.Text.Contains("密码不正确")), "错误密码没有被拒绝。");
+                    if (String.IsNullOrEmpty(validPassword)) dialog.Close();
+                    else
+                    {
+                        field.Password = validPassword;
+                        submit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                        Check(!dialog.IsVisible, "提交正确密码后设置密码窗口未关闭。");
+                    }
+                }
+                catch (Exception error)
+                {
+                    failure = error;
+                    if (dialog != null && dialog.IsVisible) dialog.Close();
+                    else foreach (Window remaining in Application.Current.Windows.Cast<Window>().Where(w => w != window && w.Title == "设置密码").ToList()) remaining.Close();
+                }
+            }));
+            Click(Button("设置"));
+            if (failure != null) throw new InvalidOperationException("设置密码窗口验证失败。", failure);
+            return !String.IsNullOrEmpty(validPassword);
+        }
         private static Button Button(string content) { return Find<Button>().Single(b => b.Content is string && (string)b.Content == content); }
         private static void Click(Button button)
         {

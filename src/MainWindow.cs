@@ -22,6 +22,7 @@ namespace Chooser
         [DataMember] public string Title { get; set; }
         [DataMember] public string Version { get; set; }
         [DataMember] public string ExampleFile { get; set; }
+        [DataMember] public string Prompt { get; set; }
         [DataMember] public List<XmlGuideSection> Sections { get; set; }
     }
 
@@ -41,9 +42,8 @@ namespace Chooser
         ScrollViewer scroll;
         TextBlock status;
         ComboBox bankPicker;
-        TextBox rangeStart, rangeEnd;
         TextBlock bankHint;
-        Button startButton, examButton, nextButton;
+        Button startButton, nextButton;
         readonly Dictionary<string, Button> optionButtons = new Dictionary<string, Button>();
         readonly Dictionary<string, TextBlock> optionMarkers = new Dictionary<string, TextBlock>();
         string view = "home";
@@ -52,6 +52,8 @@ namespace Chooser
         bool fullScreen;
         WindowState previousState;
         bool savingFailed;
+        bool settingsUnlocked;
+        bool questionListOpen;
         string managementQuery = "";
         string viewedBankId = "";
         string viewedQuestionQuery = "";
@@ -69,16 +71,27 @@ namespace Chooser
             InstallStyles(); ApplyTheme();
             AllowDrop = true;
             DragOver += delegate(object s, DragEventArgs e) {
-                e.Effects = view == "quiz" ? DragDropEffects.None : (e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None);
+                e.Effects = CanImport && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
                 e.Handled = true;
             };
             Drop += delegate(object s, DragEventArgs e) {
-                if (view == "quiz") return;
+                if (!CanImport) return;
                 var paths = e.Data.GetData(DataFormats.FileDrop) as string[];
                 if (paths != null) ImportFiles(paths);
             };
             PreviewKeyDown += OnKey;
-            Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { e.Cancel = !Save(); };
+            Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) {
+                if (!Save()) { e.Cancel = true; return; }
+                try { store.Flush(); }
+                catch (Exception error)
+                {
+                    var answer = MessageBox.Show(this,
+                        "数据暂存在本机，尚未写入便携 EXE。下次从原位置打开可继续使用。\n\n" +
+                        error.Message + "\n\n仍要退出？",
+                        "便携保存未完成", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    e.Cancel = answer != MessageBoxResult.Yes;
+                }
+            };
             ShowHome();
             Loaded += delegate {
                 if (!String.IsNullOrEmpty(store.LoadWarning)) MessageBox.Show(this, store.LoadWarning, "数据恢复", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -121,6 +134,10 @@ namespace Chooser
             Resources["Line"] = Brush(d ? "#3C485A" : "#D4DEEB");
             Resources["Success"] = Brush(d ? "#8DDEA5" : "#16713D");
             Resources["Error"] = Brush(d ? "#FFB4AB" : "#B3261E");
+            Resources["Mark"] = Brush(d ? "#FFD873" : "#725408");
+            Resources["MarkFill"] = Brush(d ? "#463815" : "#FFF1AD");
+            Resources["PendingFill"] = Brush(d ? "#3F2326" : "#FFE6E3");
+            Resources["DoneFill"] = Brush(d ? "#173C2A" : "#E1F5E9");
             SetResourceReference(BackgroundProperty, "Canvas");
             SetResourceReference(ForegroundProperty, "Ink");
         }
@@ -188,6 +205,7 @@ namespace Chooser
             if (view == "quiz") ShowQuestion();
             else if (view == "result") ShowResult();
             else if (view == "manage") ShowManage();
+            else if (view == "settings") ShowSettings();
             else if (view == "wrong") ShowWrongs();
             else if (view == "help") ShowHelp();
             else if (view == "bank") ShowBank(viewedBankId);
@@ -201,7 +219,7 @@ namespace Chooser
                 if (resource != null) return (XmlGuideDocument)new DataContractJsonSerializer(typeof(XmlGuideDocument)).ReadObject(resource);
             }
             // Core-only verification builds do not embed release resources.
-            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.4.0", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "正式单文件版内置完整指南及可下载示例。题库使用 <quiz>、<question>、<text>、<option id=\"A\"> 和 <answer>，每题固定 1 分。" } } };
+            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.5.0", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "题库用 <quiz> 包住所有题目。每题填写题干、至少两个选项和答案，保存为 UTF-8 的 .xml 文件。" } } };
         }
         static string ReadExample()
         {
@@ -220,7 +238,20 @@ namespace Chooser
             var actions = Actions(); actions.Margin = new Thickness(0, 18, 0, 8);
             actions.Children.Add(Action("返回首页", ShowHome, false));
             if (data.Active != null && ActiveBank != null && (!data.Active.Completed || data.Active.FeedbackPending)) actions.Children.Add(Action("返回答题", ShowQuestion, false));
-            actions.Children.Add(Action("下载示例 XML", ExportExample, true)); inner.Children.Add(actions);
+            actions.Children.Add(Action("下载示例 XML", ExportExample, false));
+            var clipboardStatus = Text("", 13, "Muted");
+            clipboardStatus.Visibility = Visibility.Collapsed;
+            if (!String.IsNullOrWhiteSpace(guide.Prompt))
+            {
+                actions.Children.Add(Action("复制 AI 代写提示词", delegate {
+                    CopyHelpText(delegate { return guide.Prompt; }, "提示词已复制。粘贴到 AI 对话，再填写出题要求或粘贴原题。", clipboardStatus);
+                }, true));
+            }
+            actions.Children.Add(Action("复制示例 XML", delegate {
+                CopyHelpText(ReadExample, "示例 XML 已复制。", clipboardStatus);
+            }, false));
+            inner.Children.Add(actions);
+            inner.Children.Add(clipboardStatus);
             foreach (var section in guide.Sections)
             {
                 var title = Text(section.Title, 19, "Ink"); title.FontWeight = FontWeights.SemiBold; title.Margin = new Thickness(0, 21, 0, 8); inner.Children.Add(title);
@@ -233,6 +264,21 @@ namespace Chooser
             }
             var version = Text("选择器 v" + guide.Version, 12, "Muted"); version.Margin = new Thickness(0, 25, 0, 0); inner.Children.Add(version);
             page.Children.Add(Card(inner));
+        }
+        void CopyHelpText(Func<string> getText, string success, TextBlock feedback)
+        {
+            try
+            {
+                Clipboard.SetText(getText());
+                feedback.Text = success;
+                feedback.Foreground = Color("Success");
+            }
+            catch (Exception error)
+            {
+                feedback.Text = "复制失败，请重试。" + error.Message;
+                feedback.Foreground = Color("Error");
+            }
+            feedback.Visibility = Visibility.Visible;
         }
         void ExportExample()
         {
@@ -272,11 +318,12 @@ namespace Chooser
         Bank ActiveBank { get { return data.Active == null ? null : data.Banks.FirstOrDefault(b => b.Id == data.Active.BankId); } }
         void ShowHome()
         {
+            settingsUnlocked = false;
             Begin("home");
             var inner = new StackPanel();
             var heading = new DockPanel { LastChildFill = true };
-            var manage = Action("管理题库", ShowManage, false); manage.Margin = new Thickness(10, 0, 0, 0); manage.VerticalAlignment = VerticalAlignment.Top;
-            DockPanel.SetDock(manage, Dock.Right); heading.Children.Add(manage);
+            var settings = Action("设置", OpenSettings, false); settings.Margin = new Thickness(10, 0, 0, 0); settings.VerticalAlignment = VerticalAlignment.Top;
+            DockPanel.SetDock(settings, Dock.Right); heading.Children.Add(settings);
             var ht = new StackPanel();
             var title = Text("题库选择器", 30, "Ink"); title.FontWeight = FontWeights.SemiBold; ht.Children.Add(title);
             heading.Children.Add(ht); heading.Margin = new Thickness(0, 0, 0, 24); inner.Children.Add(heading);
@@ -287,45 +334,26 @@ namespace Chooser
                 bankPicker.Items.Add(new ComboBoxItem { Content = bank.Name + "  ·  " + bank.Questions.Count + " 题", Tag = bank.Id });
             }
             inner.Children.Add(bankPicker);
-            var uploadContent = new StackPanel();
-            var uploadText = Text("＋  导入 XML 题库", 16, "Primary"); uploadText.FontWeight = FontWeights.Medium; uploadText.HorizontalAlignment = HorizontalAlignment.Center;
-            uploadContent.Children.Add(uploadText);
-            var upload = Action("", PickFiles, false); upload.Content = uploadContent; upload.ToolTip = "选择 XML 文件或拖入窗口"; upload.Background = Color("Tint"); upload.BorderBrush = Color("Tint"); upload.Padding = new Thickness(20, 21, 20, 21); upload.Margin = new Thickness(0, 0, 0, 23); upload.HorizontalContentAlignment = HorizontalAlignment.Stretch;
-            inner.Children.Add(upload);
-            var ranges = new Grid(); ranges.ColumnDefinitions.Add(new ColumnDefinition()); ranges.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) }); ranges.ColumnDefinitions.Add(new ColumnDefinition());
-            var left = new StackPanel(); left.Children.Add(Label("起始题号")); rangeStart = new TextBox { Text = "1", FontSize = 16 * Z, MaxLength = 7 }; left.Children.Add(rangeStart); ranges.Children.Add(left);
-            var right = new StackPanel(); right.Children.Add(Label("结束题号")); rangeEnd = new TextBox { FontSize = 16 * Z, MaxLength = 7 }; right.Children.Add(rangeEnd); Grid.SetColumn(right, 2); ranges.Children.Add(right);
-            inner.Children.Add(ranges); bankHint = Text("", 12, "Muted"); bankHint.Margin = new Thickness(0, 9, 0, 0); inner.Children.Add(bankHint);
-            var options = new WrapPanel { Margin = new Thickness(0, 17, 0, 0) };
-            var showAnswers = new CheckBox { Content = "显示答案", IsChecked = data.ShowAnswers, Foreground = Color("Ink"), FontSize = 14 * Z, Margin = new Thickness(0, 0, 24, 6), VerticalContentAlignment = VerticalAlignment.Center };
-            showAnswers.ToolTip = "答题时显示正确答案和题库解析";
-            showAnswers.Checked += delegate { data.ShowAnswers = true; Save(); };
-            showAnswers.Unchecked += delegate { data.ShowAnswers = false; Save(); };
-            var immediate = new CheckBox { Content = "立即评分", IsChecked = data.ImmediateScoring, Foreground = Color("Ink"), FontSize = 14 * Z, Margin = new Thickness(0, 0, 0, 6), VerticalContentAlignment = VerticalAlignment.Center };
-            immediate.ToolTip = "提交答案后立刻显示本题评分，再进入下一题";
-            immediate.Checked += delegate { data.ImmediateScoring = true; Save(); };
-            immediate.Unchecked += delegate { data.ImmediateScoring = false; Save(); };
-            options.Children.Add(showAnswers); options.Children.Add(immediate); inner.Children.Add(options);
+            bankHint = Text("", 13, "Muted"); inner.Children.Add(bankHint);
             var actions = Actions();
             startButton = Action("开始答题  →", delegate { Start(false); }, true); actions.Children.Add(startButton);
-            examButton = Action("随机考试", delegate { Start(true); }, false); actions.Children.Add(examButton);
             if (data.Active != null && ActiveBank != null)
             {
                 if (!data.Active.Completed || data.Active.FeedbackPending) actions.Children.Add(Action("继续上次进度", ShowQuestion, false));
                 else actions.Children.Add(Action("查看上次成绩", ShowResult, false));
             }
             inner.Children.Add(actions);
+            var chosen = SelectedBank;
+            if (chosen != null) bankPicker.SelectedItem = bankPicker.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == chosen.Id);
+            UpdateBankHint();
             bankPicker.SelectionChanged += delegate {
                 var item = bankPicker.SelectedItem as ComboBoxItem;
                 data.SelectedBankId = item == null ? null : (string)item.Tag;
                 UpdateBankHint(); Save();
             };
-            var chosen = SelectedBank;
-            if (chosen != null) bankPicker.SelectedItem = bankPicker.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == chosen.Id);
-            else UpdateBankHint();
             page.Children.Add(Card(inner));
             var lower = new Grid(); lower.ColumnDefinitions.Add(new ColumnDefinition()); lower.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) }); lower.ColumnDefinitions.Add(new ColumnDefinition());
-            var library = new StackPanel(); library.Children.Add(Label("本机题库"));
+            var library = new StackPanel(); library.Children.Add(Label("已保存题库"));
             var libraryCount = Text(data.Banks.Count + " 个题库  /  " + data.Banks.Sum(b => b.Questions.Count) + " 题", 18, "Ink"); libraryCount.FontWeight = FontWeights.Medium; library.Children.Add(libraryCount);
             var card1 = Card(library); card1.Padding = new Thickness(23); lower.Children.Add(card1);
             var wrong = new StackPanel(); wrong.Children.Add(Label("累计错题"));
@@ -336,18 +364,165 @@ namespace Chooser
         void UpdateBankHint()
         {
             var bank = SelectedBank;
-            bool exists = bank != null;
-            rangeStart.IsEnabled = rangeEnd.IsEnabled = startButton.IsEnabled = examButton.IsEnabled = exists;
-            rangeStart.Text = "1"; rangeEnd.Text = exists ? bank.Questions.Count.ToString() : "";
-            bankHint.Text = exists ? "共 " + bank.Questions.Count + " 题" : "请先导入 XML 题库";
+            startButton.IsEnabled = bank != null;
+            if (bank == null) { bankHint.Text = "请在设置中导入或新建题库。"; return; }
+            int first, last;
+            GetRange(bank, out first, out last);
+            bankHint.Text = "本轮范围  " + first + "–" + last + " 题";
         }
+        bool CanImport { get { return settingsUnlocked && (view == "settings" || view == "manage" || view == "bank"); } }
+        void OpenSettings()
+        {
+            var dialog = new Window {
+                Owner = this, Title = "设置密码", Width = 390, SizeToContent = SizeToContent.Height,
+                ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = Color("Surface"), Foreground = Color("Ink"), FontFamily = FontFamily
+            };
+            dialog.Resources.MergedDictionaries.Add(Resources);
+            var body = new StackPanel { Margin = new Thickness(24) };
+            body.Children.Add(Label("输入设置密码"));
+            var password = new PasswordBox {
+                MaxLength = 64, FontSize = 16 * Z, Padding = new Thickness(10),
+                Foreground = Color("Ink"), Background = Color("Surface"), BorderBrush = Color("Line")
+            };
+            System.Windows.Automation.AutomationProperties.SetName(password, "设置密码");
+            body.Children.Add(password);
+            var error = Text("", 13, "Error");
+            body.Children.Add(error);
+            var actions = Actions();
+            var confirm = Action("进入设置", delegate {
+                if (VerifySettingsPassword(password.Password)) { dialog.DialogResult = true; return; }
+                error.Text = "密码不正确，请重试。";
+                password.Clear();
+                password.Focus();
+            }, true);
+            confirm.IsDefault = true;
+            actions.Children.Add(confirm);
+            var cancel = Action("取消", delegate { dialog.Close(); }, false);
+            cancel.IsCancel = true;
+            actions.Children.Add(cancel);
+            body.Children.Add(actions);
+            dialog.Content = body;
+            dialog.Loaded += delegate { password.Focus(); };
+            if (dialog.ShowDialog() != true) return;
+            settingsUnlocked = true;
+            ShowSettings();
+        }
+
+        static bool VerifySettingsPassword(string value)
+        {
+            // This gate keeps classroom settings out of the ordinary answer flow.
+            const string expectedHash = "HV3MQOfcE0m5WtC0JcBUh/f92yivd2pfReWT7lwhvwM=";
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+                return Convert.ToBase64String(sha.ComputeHash(Encoding.UTF8.GetBytes(value))) == expectedHash;
+        }
+
+        void GetRange(Bank bank, out int first, out int last)
+        {
+            int count = bank.Questions.Count;
+            bool saved = data.RangeBankId == bank.Id && data.RangeStart >= 1 &&
+                data.RangeEnd >= data.RangeStart && data.RangeEnd <= count;
+            first = saved ? data.RangeStart : 1;
+            last = saved ? data.RangeEnd : count;
+        }
+
+        void ShowSettings()
+        {
+            if (!settingsUnlocked) { ShowHome(); return; }
+            Begin("settings");
+            var inner = Heading("设置", "调整答题选项和所选题库的考试范围。");
+            var options = Actions();
+            var previous = SettingOption("允许上一题", data.AllowPreviousQuestion);
+            var immediate = SettingOption("立即评分", QuizEngine.ImmediateScoring(data));
+            var answers = SettingOption("显示答案", data.ShowAnswers);
+            immediate.IsEnabled = previous.IsChecked != true;
+            previous.Checked += delegate { immediate.IsChecked = false; immediate.IsEnabled = false; };
+            previous.Unchecked += delegate { immediate.IsEnabled = true; };
+            options.Children.Add(previous);
+            options.Children.Add(immediate);
+            options.Children.Add(answers);
+            inner.Children.Add(options);
+            inner.Children.Add(Label("启用「允许上一题」会关闭立即评分。"));
+
+            var bank = SelectedBank;
+            TextBox firstBox = null, lastBox = null;
+            if (bank != null)
+            {
+                int first, last;
+                GetRange(bank, out first, out last);
+                var section = Text("考试范围", 19, "Ink");
+                section.Margin = new Thickness(0, 16, 0, 4);
+                inner.Children.Add(section);
+                inner.Children.Add(Label(bank.Name + " · 共 " + bank.Questions.Count + " 题"));
+                var range = new Grid();
+                range.ColumnDefinitions.Add(new ColumnDefinition());
+                range.ColumnDefinitions.Add(new ColumnDefinition());
+                var left = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
+                var right = new StackPanel();
+                firstBox = new TextBox { Text = first.ToString(), MaxLength = 7, FontSize = 16 * Z };
+                lastBox = new TextBox { Text = last.ToString(), MaxLength = 7, FontSize = 16 * Z };
+                System.Windows.Automation.AutomationProperties.SetName(firstBox, "起始题号");
+                System.Windows.Automation.AutomationProperties.SetName(lastBox, "结束题号");
+                left.Children.Add(Label("起始题号"));
+                left.Children.Add(firstBox);
+                right.Children.Add(Label("结束题号"));
+                right.Children.Add(lastBox);
+                Grid.SetColumn(right, 1);
+                range.Children.Add(left);
+                range.Children.Add(right);
+                inner.Children.Add(range);
+            }
+
+            var error = Text("", 13, "Error");
+            error.Margin = new Thickness(0, 8, 0, 0);
+            inner.Children.Add(error);
+            Func<bool> saveSettings = delegate {
+                int first = 1, last = 0;
+                if (bank != null && (!Int32.TryParse(firstBox.Text, out first) ||
+                    !Int32.TryParse(lastBox.Text, out last) || first < 1 || last < first || last > bank.Questions.Count))
+                {
+                    error.Text = "请填写 1–" + bank.Questions.Count + " 之间的有效起止题号。";
+                    return false;
+                }
+                var candidate = CloneState(data);
+                candidate.AllowPreviousQuestion = previous.IsChecked == true;
+                candidate.ImmediateScoring = immediate.IsChecked == true && !candidate.AllowPreviousQuestion;
+                candidate.ShowAnswers = answers.IsChecked == true;
+                candidate.RangeBankId = bank == null ? "" : bank.Id;
+                candidate.RangeStart = first;
+                candidate.RangeEnd = last;
+                try { CommitState(candidate); return true; }
+                catch (Exception ex) { error.Text = "设置保存失败：" + ex.Message; return false; }
+            };
+            var actions = Actions();
+            actions.Children.Add(Action("保存设置", delegate { if (saveSettings()) ShowHome(); }, true));
+            var exam = Action("随机考试", delegate { if (saveSettings()) Start(true); }, false);
+            exam.IsEnabled = bank != null;
+            actions.Children.Add(exam);
+            actions.Children.Add(Action("管理题库", ShowManage, false));
+            actions.Children.Add(Action("返回首页", ShowHome, false));
+            inner.Children.Add(actions);
+            page.Children.Add(Card(inner));
+        }
+
+        CheckBox SettingOption(string label, bool selected)
+        {
+            return new CheckBox {
+                Content = label, IsChecked = selected, Foreground = Color("Ink"),
+                FontSize = 14 * Z, Margin = new Thickness(0, 0, 24, 12),
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+        }
+
         void PickFiles()
         {
+            if (!CanImport) return;
             var dialog = new OpenFileDialog { Title = "导入 XML 题库", Filter = "XML 题库 (*.xml)|*.xml", Multiselect = true };
             if (dialog.ShowDialog(this) == true) ImportFiles(dialog.FileNames);
         }
         void ImportFiles(string[] paths)
         {
+            if (!CanImport) return;
             int imported = 0, duplicate = 0; var errors = new List<string>();
             var candidate = CloneState(data);
             foreach (var path in paths)
@@ -370,7 +545,7 @@ namespace Chooser
             }
             try { CommitState(candidate); }
             catch (Exception error) { MessageBox.Show(this, "导入未能保存，原有题库和记录未更改。\n" + error.Message, "导入失败", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            ShowHome();
+            ShowManage();
             string summary = "已导入 " + imported + " 个题库" + (duplicate > 0 ? "；" + duplicate + " 个已存在，直接使用缓存" : "") + "。";
             if (errors.Count > 0) summary += "\n\n以下文件未导入：\n" + String.Join("\n", errors);
             MessageBox.Show(this, summary, "导入题库", MessageBoxButton.OK, errors.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
@@ -381,18 +556,22 @@ namespace Chooser
         }
         void Start(bool random)
         {
+            if (random && !settingsUnlocked) return;
             var bank = SelectedBank; if (bank == null) return;
             int start, end;
-            if (!Int32.TryParse(rangeStart.Text, out start) || !Int32.TryParse(rangeEnd.Text, out end) || start < 1 || end < start || end > bank.Questions.Count)
-            { MessageBox.Show(this, "请输入有效题号：1 ≤ 起始题号 ≤ 结束题号 ≤ " + bank.Questions.Count + "。", "检查答题范围", MessageBoxButton.OK, MessageBoxImage.Information); return; }
+            GetRange(bank, out start, out end);
             int count = end - start + 1;
             if (random)
             {
                 int? picked = AskCount(start, end, count); if (!picked.HasValue) return; count = picked.Value;
             }
             if (!CanReplaceProgress()) return;
+            var previous = data.Active;
             data.Active = QuizEngine.CreateSession(bank, start, end, count, random, random ? "随机考试" : "顺序练习");
-            Save(); ShowQuestion();
+            if (!Save()) { data.Active = previous; return; }
+            settingsUnlocked = false;
+            questionListOpen = false;
+            ShowQuestion();
         }
         int? AskCount(int start, int end, int maximum)
         {
@@ -417,11 +596,14 @@ namespace Chooser
 
         void ShowQuestion()
         {
+            settingsUnlocked = false;
             var bank = ActiveBank; var session = data.Active;
             if (bank == null || session == null) { ShowHome(); return; }
             if (session.Completed && !session.FeedbackPending) { ShowResult(); return; }
             var question = QuizEngine.Displayed(bank, session);
             bool feedback = session.FeedbackPending;
+            int position = QuizEngine.DisplayedPosition(session);
+            var attempt = QuizEngine.DisplayedAttempt(session);
             Begin("quiz");
             var inner = new StackPanel();
             var meta = Text(session.Mode + "  /  " + bank.Name, 13, "Muted"); meta.Margin = new Thickness(0, 0, 0, 18); inner.Children.Add(meta);
@@ -429,9 +611,24 @@ namespace Chooser
             var badgeText = Text((question.Answers.Count > 1 ? "多选" : (question.Options.Count == 2 && question.Options.Any(o => o.Id == "T") && question.Options.Any(o => o.Id == "F") ? "判断" : "单选")) + "  ·  1 分", 12, "Primary");
             var badge = new Border { Background = Color("Tint"), CornerRadius = new CornerRadius(6), Padding = new Thickness(11, 5, 11, 5), Child = badgeText, VerticalAlignment = VerticalAlignment.Center };
             DockPanel.SetDock(badge, Dock.Right); titleRow.Children.Add(badge);
-            var title = Text("第 " + (feedback ? session.Position : session.Position + 1) + " 题 / " + session.QuestionIds.Count, 23, "Ink"); title.FontWeight = FontWeights.SemiBold; titleRow.Children.Add(title); inner.Children.Add(titleRow);
-            var progress = new ProgressBar { Minimum = 0, Maximum = session.QuestionIds.Count, Value = session.Position, Height = 5, Background = Color("Tint"), Foreground = Color("Primary"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 17, 0, 24) };
+            var title = Text("第 " + (position + 1) + " 题 / " + session.QuestionIds.Count, 23, "Ink"); title.FontWeight = FontWeights.SemiBold; titleRow.Children.Add(title); inner.Children.Add(titleRow);
+            var progress = new ProgressBar { Minimum = 0, Maximum = session.QuestionIds.Count, Value = session.Attempts.Count, Height = 5, Background = Color("Tint"), Foreground = Color("Primary"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 17, 0, 14) };
             inner.Children.Add(progress);
+            var navigation = new DockPanel();
+            bool marked = session.MarkedQuestionIds.Contains(question.Id);
+            var mark = Action(marked ? "★  取消标记" : "☆  标记本题", delegate {
+                QuizEngine.ToggleMark(session);
+                Save();
+                ShowQuestion();
+            }, false);
+            mark.Padding = new Thickness(12, 6, 12, 6);
+            mark.Margin = new Thickness(10, 0, 0, 10);
+            mark.VerticalAlignment = VerticalAlignment.Top;
+            if (marked) { mark.Foreground = Color("Mark"); mark.Background = Color("MarkFill"); }
+            DockPanel.SetDock(mark, Dock.Right);
+            navigation.Children.Add(mark);
+            navigation.Children.Add(QuestionList(session, position));
+            inner.Children.Add(navigation);
             var stem = Text(question.Text, 23, "Ink"); stem.FontWeight = FontWeights.Medium; stem.Margin = new Thickness(0, 0, 0, 22); inner.Children.Add(stem);
             foreach (var option in question.Options)
             {
@@ -449,7 +646,6 @@ namespace Chooser
                 var answerPanel = new StackPanel();
                 if (feedback)
                 {
-                    var attempt = session.Attempts[session.Position - 1];
                     var scoreText = Text((attempt.Correct ? "回答正确  +1 分" : "回答错误  0 分") + "  ·  当前得分 " + QuizEngine.Score(session) + " / " + session.QuestionIds.Count, 17, attempt.Correct ? "Success" : "Error");
                     scoreText.FontWeight = FontWeights.SemiBold; scoreText.Margin = new Thickness(0, 0, 0, 8); answerPanel.Children.Add(scoreText);
                     answerPanel.Children.Add(Text("你的选择：" + AnswersText(question, attempt.Selected), 14, attempt.Correct ? "Success" : "Error"));
@@ -463,23 +659,102 @@ namespace Chooser
             }
             else
             {
-                var helper = Text(question.Answers.Count > 1 ? "多选题：选择全部正确选项，漏选或多选均不得分。" : "选择答案后提交。", 12, "Muted"); helper.Margin = new Thickness(0, 4, 0, 0); inner.Children.Add(helper);
+                var helper = Text(attempt != null ? "本题已提交。" : (question.Answers.Count > 1 ? "选择全部正确选项。" : "选择答案后提交。"), 12, "Muted"); helper.Margin = new Thickness(0, 4, 0, 0); inner.Children.Add(helper);
             }
             var actions = Actions();
-            var pause = Action("保存并返回", delegate { Save(); ShowHome(); }, false); actions.Children.Add(pause);
-            var finish = Action("提前交卷", FinishEarly, false); actions.Children.Add(finish);
-            string nextText = feedback ? (session.Completed ? "查看成绩  →" : "下一题  →") : (data.ImmediateScoring ? "提交答案  →" : (session.Position == session.QuestionIds.Count - 1 ? "完成并结算  →" : "提交并下一题  →"));
+            if (data.AllowPreviousQuestion)
+            {
+                var previous = Action("←  上一题", delegate { JumpToQuestion(position - 1); }, false);
+                previous.IsEnabled = !feedback && position > 0;
+                actions.Children.Add(previous);
+            }
+            string nextText;
+            if (feedback || attempt != null) nextText = session.Completed ? "查看成绩  →" : "下一题  →";
+            else if (QuizEngine.ImmediateScoring(data)) nextText = "提交答案  →";
+            else nextText = session.Attempts.Count + 1 == session.QuestionIds.Count ? "完成并结算  →" : "提交并下一题  →";
             nextButton = Action(nextText, SubmitCurrent, true); actions.Children.Add(nextButton); inner.Children.Add(actions);
+            var tools = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+            tools.Children.Add(Action("保存并返回", delegate { if (Save()) ShowHome(); }, false));
+            if (!session.Completed) tools.Children.Add(Action("提前交卷", FinishEarly, false));
+            inner.Children.Add(tools);
             page.Children.Add(Card(inner));
-            var hint = Text("原题号 " + question.Number + "  ·  已提交 " + session.Position + " 题  ·  答案自动保存\n快捷键：按选项字母或数字 1–9 选择，Enter 提交，F11 全屏。", 12, "Muted"); hint.Margin = new Thickness(6, 0, 0, 0); page.Children.Add(hint);
+            var hint = Text("原题号 " + question.Number + "  ·  已提交 " + session.Attempts.Count + " 题\n选项字母或数字 1–9 选择，Enter 提交，F11 全屏。", 12, "Muted"); hint.Margin = new Thickness(6, 0, 0, 0); page.Children.Add(hint);
             RefreshOptions();
             // Focus the page rather than a previously clicked option so Enter submits predictably.
             Focus();
         }
+        Expander QuestionList(Session session, int current)
+        {
+            var title = Text("题号板", 15, "Ink");
+            title.FontWeight = FontWeights.SemiBold;
+            var list = new Expander {
+                Header = title, Margin = new Thickness(0, 0, 0, 18),
+                IsExpanded = questionListOpen
+            };
+            Action fill = delegate {
+                if (list.Content != null) return;
+                var body = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
+                var legend = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
+                legend.Children.Add(Text("● 已标记   ", 12, "Mark"));
+                legend.Children.Add(Text("● 未完成   ", 12, "Error"));
+                legend.Children.Add(Text("● 已完成", 12, "Success"));
+                body.Children.Add(legend);
+                if (session.FeedbackPending) body.Children.Add(Label("查看本题评分后，点击下一题即可跳转。"));
+                var grid = new WrapPanel();
+                var answered = new HashSet<string>(session.Attempts.Select(a => a.QuestionId));
+                var marked = new HashSet<string>(session.MarkedQuestionIds);
+                for (int i = 0; i < session.QuestionIds.Count; i++)
+                {
+                    int index = i;
+                    string id = session.QuestionIds[index];
+                    bool isMarked = marked.Contains(id);
+                    bool isDone = answered.Contains(id);
+                    string stateLabel = isMarked ? "已标记" : (isDone ? "已完成" : "未完成");
+                    var link = Action("● " + (index + 1), delegate { JumpToQuestion(index); }, false);
+                    link.MinWidth = 56 * Z;
+                    link.MinHeight = 35;
+                    link.Padding = new Thickness(8, 4, 8, 4);
+                    link.Margin = new Thickness(0, 0, 7, 7);
+                    link.Foreground = Color(isMarked ? "Mark" : (isDone ? "Success" : "Error"));
+                    link.Background = Color(isMarked ? "MarkFill" : (isDone ? "DoneFill" : "PendingFill"));
+                    link.IsEnabled = !session.FeedbackPending;
+                    if (index == current)
+                    {
+                        link.BorderBrush = Color("Primary");
+                        link.BorderThickness = new Thickness(2);
+                        link.FontWeight = FontWeights.Bold;
+                    }
+                    string name = "第 " + (index + 1) + " 题 · " + stateLabel + (index == current ? " · 当前题" : "");
+                    link.ToolTip = name;
+                    System.Windows.Automation.AutomationProperties.SetName(link, name);
+                    grid.Children.Add(link);
+                }
+                body.Children.Add(new ScrollViewer {
+                    Content = grid, MaxHeight = 175, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                });
+                list.Content = body;
+            };
+            list.Expanded += delegate { questionListOpen = true; fill(); };
+            list.Collapsed += delegate { questionListOpen = false; };
+            if (questionListOpen) fill();
+            return list;
+        }
+
+        void JumpToQuestion(int index)
+        {
+            var session = data.Active;
+            if (session == null || session.Completed || session.FeedbackPending || session.Position == index) return;
+            QuizEngine.Jump(session, index);
+            Save();
+            ShowQuestion();
+        }
+
         void SelectOption(string id)
         {
             var s = data.Active; if (s == null || s.Completed || s.FeedbackPending) return;
             var q = QuizEngine.Current(ActiveBank, s);
+            if (QuizEngine.HasSubmitted(s, q.Id)) return;
             if (q.Answers.Count > 1)
             {
                 if (s.Draft.Contains(id)) s.Draft.Remove(id); else s.Draft.Add(id);
@@ -490,18 +765,19 @@ namespace Chooser
         void RefreshOptions()
         {
             var s = data.Active; var q = QuizEngine.Displayed(ActiveBank, s);
-            var selectedIds = s.FeedbackPending ? s.Attempts[s.Position - 1].Selected : s.Draft;
+            var attempt = QuizEngine.DisplayedAttempt(s);
+            var selectedIds = attempt == null ? s.Draft : attempt.Selected;
             foreach (var pair in optionButtons)
             {
                 bool selected = selectedIds.Contains(pair.Key);
-                pair.Value.IsHitTestVisible = !s.FeedbackPending;
-                pair.Value.Focusable = !s.FeedbackPending;
+                pair.Value.IsHitTestVisible = attempt == null;
+                pair.Value.Focusable = attempt == null;
                 pair.Value.Background = Color(selected ? "Tint" : "Surface");
                 pair.Value.BorderBrush = Color(selected ? "Primary" : "Line");
                 optionMarkers[pair.Key].Text = q.Answers.Count > 1 ? (selected ? "☑" : "□") : (selected ? "●" : "○");
                 optionMarkers[pair.Key].Foreground = Color(selected ? "Primary" : "Muted");
             }
-            nextButton.IsEnabled = s.FeedbackPending || s.Draft.Count > 0;
+            nextButton.IsEnabled = attempt != null || s.Draft.Count > 0;
         }
         void SubmitCurrent()
         {
@@ -512,7 +788,13 @@ namespace Chooser
                 if (data.Active.Completed) ShowResult(); else ShowQuestion();
                 return;
             }
-            if (data.Active.Completed || data.Active.Draft.Count == 0) return;
+            if (data.Active.Completed) return;
+            if (QuizEngine.DisplayedAttempt(data.Active) != null)
+            {
+                if (QuizEngine.MoveNext(data.Active)) { Save(); ShowQuestion(); }
+                return;
+            }
+            if (data.Active.Draft.Count == 0) return;
             QuizEngine.Submit(data, data.Active, ActiveBank, new List<string>(data.Active.Draft));
             Save();
             if (data.Active.Completed && !data.Active.FeedbackPending) ShowResult(); else ShowQuestion();
@@ -520,9 +802,10 @@ namespace Chooser
         void FinishEarly()
         {
             var s = data.Active;
-            if (MessageBox.Show(this, "现在交卷并显示成绩？\n当前已选答案会提交，其余未答题按 0 分计算。", "提前交卷", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-            if (s.Draft.Count > 0) QuizEngine.Submit(data, s, ActiveBank, new List<string>(s.Draft));
-            s.Completed = true; s.FeedbackPending = false; s.Draft.Clear(); Save(); ShowResult();
+            if (MessageBox.Show(this, "现在交卷并显示成绩？\n本轮所有已选答案会提交，其余未答题按 0 分计算。", "提前交卷", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+            QuizEngine.Finish(data, s, ActiveBank);
+            Save();
+            ShowResult();
         }
         string AnswersText(Question question, IEnumerable<string> ids)
         {
@@ -591,8 +874,12 @@ namespace Chooser
         void StartQuestions(Bank bank, List<string> ids, string mode)
         {
             if (ids.Count == 0 || !CanReplaceProgress()) return;
-            data.Active = new Session { BankId = bank.Id, Mode = mode, QuestionIds = new List<string>(ids), Position = 0 };
-            data.SelectedBankId = bank.Id; Save(); ShowQuestion();
+            var candidate = CloneState(data);
+            candidate.Active = new Session { BankId = bank.Id, Mode = mode, QuestionIds = new List<string>(ids) };
+            candidate.SelectedBankId = bank.Id;
+            CommitState(candidate);
+            questionListOpen = false;
+            ShowQuestion();
         }
 
         void ShowWrongs()
@@ -649,9 +936,10 @@ namespace Chooser
 
         void ShowManage()
         {
+            if (!settingsUnlocked) { ShowHome(); return; }
             Begin("manage");
             var inner = Heading("题库管理", "");
-            var actions = new WrapPanel(); actions.Children.Add(Action("返回首页", ShowHome, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 XML", PickFiles, false));
+            var actions = new WrapPanel(); actions.Children.Add(Action("返回设置", ShowSettings, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 XML", PickFiles, false));
             actions.Children.Add(Action("备份全部数据", ExportBackup, false)); actions.Children.Add(Action("恢复数据备份", RestoreBackup, false)); inner.Children.Add(actions);
             var search = new TextBox { Text = managementQuery, FontSize = 15 * Z, Margin = new Thickness(0, 14, 0, 0) };
             System.Windows.Automation.AutomationProperties.SetName(search, "搜索题库名称或题干");
@@ -690,6 +978,7 @@ namespace Chooser
         }
         void ShowBank(string bankId)
         {
+            if (!settingsUnlocked) { ShowHome(); return; }
             var bank = data.Banks.FirstOrDefault(b => b.Id == bankId);
             if (bank == null) { ShowManage(); return; }
             viewedBankId = bankId; Begin("bank");
@@ -744,6 +1033,10 @@ namespace Chooser
             store.Save(candidate);
             data.Banks = candidate.Banks; data.Wrongs = candidate.Wrongs; data.Active = candidate.Active; data.SelectedBankId = candidate.SelectedBankId;
             data.Dark = candidate.Dark; data.Zoom = candidate.Zoom; data.ShowAnswers = candidate.ShowAnswers; data.ImmediateScoring = candidate.ImmediateScoring;
+            data.AllowPreviousQuestion = candidate.AllowPreviousQuestion;
+            data.RangeBankId = candidate.RangeBankId;
+            data.RangeStart = candidate.RangeStart;
+            data.RangeEnd = candidate.RangeEnd;
             savingFailed = false;
             if (status != null) { status.Text = ""; status.Visibility = Visibility.Collapsed; }
         }
@@ -861,12 +1154,13 @@ namespace Chooser
         void ExportBackup()
         {
             var dialog = new SaveFileDialog { Title = "备份全部题库和记录", Filter = "选择器备份 (*.json)|*.json", FileName = "选择器备份-" + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".json" };
-            if (dialog.ShowDialog(this) != true || !Save()) return;
+            if (dialog.ShowDialog(this) != true) return;
             try
             {
-                string source = Path.Combine(store.DirectoryPath, "state.json");
-                if (String.Equals(Path.GetFullPath(source), Path.GetFullPath(dialog.FileName), StringComparison.OrdinalIgnoreCase)) throw new IOException("请将备份保存到缓存目录以外的位置。");
-                File.Copy(source, dialog.FileName, true); MessageBox.Show(this, "题库、错题次数和当前进度已备份。", "备份完成");
+                if (!String.Equals(Path.GetExtension(dialog.FileName), ".json", StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("请选择扩展名为 .json 的备份文件。");
+                store.Export(dialog.FileName, CloneState(data));
+                MessageBox.Show(this, "题库、错题次数和当前进度已备份。", "备份完成");
             }
             catch (Exception ex) { MessageBox.Show(this, "备份失败：" + ex.Message, "备份失败"); }
         }
@@ -877,17 +1171,10 @@ namespace Chooser
             try
             {
                 AppState restored;
-                if (new FileInfo(dialog.FileName).Length > 256L * 1024 * 1024) throw new IOException("备份文件超过 256 MB，无法恢复。");
-                var serializer = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof(AppState), new System.Runtime.Serialization.Json.DataContractJsonSerializerSettings { MaxItemsInObjectGraph = 5000000 });
-                using (var input = File.OpenRead(dialog.FileName)) restored = (AppState)serializer.ReadObject(input);
-                // Validate through the same serializer/store path before asking to replace live data.
-                string checkDirectory = Path.Combine(Path.GetTempPath(), "chooser-restore-" + Guid.NewGuid().ToString("N"));
-                try { new Store(checkDirectory).Save(restored); }
-                finally { if (Directory.Exists(checkDirectory)) Directory.Delete(checkDirectory, true); }
+                using (var input = File.OpenRead(dialog.FileName)) restored = Store.ReadSnapshot(input);
                 if (MessageBox.Show(this, "备份包含 " + restored.Banks.Count + " 个题库、" + restored.Wrongs.Count + " 道错题。\n恢复会替换当前全部题库、错题次数和进度。\n\n确定恢复？", "恢复备份", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
                 // Persist replacement before mutating the live state.
-                store.Save(restored);
-                data.Banks = restored.Banks; data.Wrongs = restored.Wrongs; data.Active = restored.Active; data.SelectedBankId = restored.SelectedBankId; data.Dark = restored.Dark; data.Zoom = restored.Zoom; data.ShowAnswers = restored.ShowAnswers; data.ImmediateScoring = restored.ImmediateScoring;
+                CommitState(restored);
                 wrongBank = ""; wrongMinimum = 1; wrongPage = 0; ApplyTheme(); ShowHome();
                 MessageBox.Show(this, "备份已恢复。", "恢复完成");
             }
@@ -901,9 +1188,13 @@ namespace Chooser
             // Modal dialogs own their keyboard input.
             if (OwnedWindows.Count > 0) return;
             if (actualKey == Key.F1 && Keyboard.Modifiers == ModifierKeys.None) { ShowHelp(); e.Handled = true; return; }
-            if (Keyboard.Modifiers == ModifierKeys.Control && actualKey == Key.O && view != "quiz") { PickFiles(); e.Handled = true; return; }
+            if (Keyboard.Modifiers == ModifierKeys.Control && actualKey == Key.O && CanImport) { PickFiles(); e.Handled = true; return; }
             if (view != "quiz" || data.Active == null || (data.Active.Completed && !data.Active.FeedbackPending) || Keyboard.Modifiers != ModifierKeys.None) return;
-            if (actualKey == Key.Enter) { SubmitCurrent(); e.Handled = true; return; }
+            if (actualKey == Key.Enter)
+            {
+                if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.ButtonBase) return;
+                SubmitCurrent(); e.Handled = true; return;
+            }
             if (data.Active.FeedbackPending) return;
             var q = QuizEngine.Current(ActiveBank, data.Active);
             string key = actualKey.ToString().ToUpperInvariant();

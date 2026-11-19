@@ -35,7 +35,9 @@ namespace Chooser
                 Bank original = XmlQuiz.ParseFile(Path.Combine(root, "assets", "example.xml")); state.Banks.Add(original); state.SelectedBankId = original.Id;
                 store.Save(state); window = new MainWindow(store, state);
                 Test("管理列表提供新建、查看、编辑、重命名与查询入口", delegate {
-                    Call("ShowManage");
+                    SetField("settingsUnlocked", true);
+                    Call("ShowSettings");
+                    ClickWithin((DependencyObject)window.Content, "管理题库");
                     foreach (string action in new[] { "新建题库", "查看", "编辑 XML", "重命名", "删除", "导出 XML" }) Check(Find<Button>().Any(b => Equals(b.Content, action)), "缺少 " + action);
                     SetField("managementQuery", "地球"); Call("ShowManage"); Check(AllText().Contains(original.Name), "题干查询未匹配题库。");
                     SetField("managementQuery", "无匹配关键词XYZ"); Call("ShowManage"); Check(AllText().Contains("没有匹配的题库"), "空查询结果未显示。");
@@ -67,7 +69,11 @@ namespace Chooser
                 });
                 Test("真实重命名保留错题和待查看评分，并更新导出 XML 标题", delegate {
                     var bank = state.Banks.First(b => b.Id == original.Id);
-                    state.ImmediateScoring = true; state.Active = QuizEngine.CreateSession(bank, 1, 1, 1, false, "管理回归"); QuizEngine.Submit(state, state.Active, bank, new List<string> { "A" }); store.Save(state);
+                    state.AllowPreviousQuestion = false;
+                    state.ImmediateScoring = true;
+                    state.Active = QuizEngine.CreateSession(bank, 1, 1, 1, false, "管理回归");
+                    QuizEngine.Submit(state, state.Active, bank, new List<string> { "A" });
+                    store.Save(state);
                     RunModal("重命名题库", delegate(Window dialog) { var content = (DependencyObject)dialog.Content; Descendants(content).OfType<TextBox>().Single().Text = "重命名后的题库"; ClickWithin(content, "保存名称"); }, delegate { Call("OpenRenameBank", bank); });
                     var renamed = state.Banks.First(b => b.Id == original.Id);
                     Check(renamed.Name == "重命名后的题库" && XmlQuiz.Parse(renamed.Xml, "x.xml").Name == renamed.Name, "导出名称不一致。");
@@ -108,10 +114,10 @@ namespace Chooser
                     Check(state.Banks.Count == count - 1 && !store.Load().Banks.Any(b => b.Id == bank.Id), "删除未持久化。");
                     Call("ShowManage"); Check(AllText().Contains("分页题库"), "删除影响其他题库。");
                 });
-                Test("发布版本更新至 1.4，帮助与图标保持可用", delegate {
-                    string exe = Path.Combine(root, "选择器单文件版v1.4.exe"); Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.4.0.0", "发布版本错误。");
+                Test("发布版本更新至 1.5，帮助与图标保持可用", delegate {
+                    string exe = Path.Combine(root, "选择器单文件版v1.5.exe"); Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.5.0.0", "发布版本错误。");
                     var resources = Assembly.ReflectionOnlyLoadFrom(exe).GetManifestResourceNames(); Check(resources.Contains("default.xml") && resources.Contains("xml-guide.json") && resources.Contains("example.xml"), "发布程序缺少内置资源。");
-                    Call("ShowHelp"); Check(AllText().Contains("题库 XML 写作指南") && AllText().Contains("选择器 v1.4.0"), "指南版本未同步。");
+                    Call("ShowHelp"); Check(AllText().Contains("题库 XML 写作指南") && AllText().Contains("选择器 v1.5.0"), "指南版本未同步。");
                     Check(!AllText().Split('\n').Contains("选"), "旧字图标复现。");
                 });
             }

@@ -64,7 +64,18 @@ namespace Chooser
         [DataMember] public List<string> Draft { get; set; }
         [DataMember] public bool Completed { get; set; }
         [DataMember] public bool FeedbackPending { get; set; }
-        public Session() { BankId = Mode = ""; QuestionIds = new List<string>(); Attempts = new List<Attempt>(); Draft = new List<string>(); }
+        [DataMember(EmitDefaultValue = false)] public string FeedbackQuestionId { get; set; }
+        [DataMember(EmitDefaultValue = false)] public Dictionary<string, List<string>> OtherDrafts { get; set; }
+        [DataMember(EmitDefaultValue = false)] public List<string> MarkedQuestionIds { get; set; }
+        public Session()
+        {
+            BankId = Mode = "";
+            QuestionIds = new List<string>();
+            Attempts = new List<Attempt>();
+            Draft = new List<string>();
+            OtherDrafts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            MarkedQuestionIds = new List<string>();
+        }
     }
 
     [DataContract]
@@ -89,6 +100,15 @@ namespace Chooser
         [DataMember] public double Zoom { get; set; }
         [DataMember] public bool ShowAnswers { get; set; }
         [DataMember] public bool ImmediateScoring { get; set; }
+        [DataMember(Name = "AllowPreviousQuestion", EmitDefaultValue = false)] private bool? allowPreviousQuestion;
+        [DataMember(EmitDefaultValue = false)] public string RangeBankId { get; set; }
+        [DataMember(EmitDefaultValue = false)] public int RangeStart { get; set; }
+        [DataMember(EmitDefaultValue = false)] public int RangeEnd { get; set; }
+        public bool AllowPreviousQuestion
+        {
+            get { return allowPreviousQuestion.GetValueOrDefault(!ImmediateScoring); }
+            set { allowPreviousQuestion = value; }
+        }
         public AppState() { Banks = new List<Bank>(); Wrongs = new List<WrongRecord>(); SelectedBankId = ""; Zoom = 1; }
     }
 
@@ -389,6 +409,7 @@ namespace Chooser
             state.Banks[state.Banks.IndexOf(old)] = bank;
             state.Wrongs = wrongs;
             if (state.SelectedBankId == old.Id) state.SelectedBankId = bank.Id;
+            if (state.RangeBankId == old.Id) state.RangeBankId = bank.Id;
             if (clearActive) state.Active = null;
             else if (state.Active != null && state.Active.BankId == old.Id) state.Active.BankId = bank.Id;
             return bank;
@@ -448,45 +469,174 @@ namespace Chooser
             return question;
         }
 
+        public static bool ImmediateScoring(AppState state)
+        {
+            return state.ImmediateScoring && !state.AllowPreviousQuestion;
+        }
+
+        public static bool HasSubmitted(Session session, string questionId)
+        {
+            return session.Attempts.Any(attempt => attempt.QuestionId == questionId);
+        }
+
+        public static int DisplayedPosition(Session session)
+        {
+            if (!session.FeedbackPending) return session.Position;
+            return session.FeedbackQuestionId == null
+                ? session.Position - 1
+                : session.QuestionIds.IndexOf(session.FeedbackQuestionId);
+        }
+
+        public static Attempt DisplayedAttempt(Session session)
+        {
+            string id = session.QuestionIds[DisplayedPosition(session)];
+            return session.Attempts.FirstOrDefault(attempt => attempt.QuestionId == id);
+        }
+
+        public static bool ToggleMark(Session session)
+        {
+            if (session.Completed && !session.FeedbackPending) throw new InvalidOperationException("本次答题已结算。");
+            if (session.MarkedQuestionIds == null) session.MarkedQuestionIds = new List<string>();
+            string id = session.QuestionIds[DisplayedPosition(session)];
+            if (session.MarkedQuestionIds.Remove(id)) return false;
+            session.MarkedQuestionIds.Add(id);
+            return true;
+        }
+
+        public static void Jump(Session session, int position)
+        {
+            if (session == null || session.Completed) throw new InvalidOperationException("本次答题已结算。");
+            if (session.FeedbackPending) throw new InvalidOperationException("请先查看本题评分，再切换题目。");
+            if (position < 0 || position >= session.QuestionIds.Count) throw new ArgumentOutOfRangeException("position", "题号超出本轮范围。");
+            if (position == session.Position) return;
+            RememberCurrentDraft(session);
+            session.Position = position;
+            RestoreCurrentDraft(session);
+        }
+
+        public static bool MoveNext(Session session)
+        {
+            int position = NextUnsubmittedPosition(session);
+            if (position < 0 || position == session.Position) return false;
+            Jump(session, position);
+            return true;
+        }
+
+        private static int NextUnsubmittedPosition(Session session)
+        {
+            var submitted = new HashSet<string>(session.Attempts.Select(attempt => attempt.QuestionId), StringComparer.Ordinal);
+            for (int offset = 1; offset <= session.QuestionIds.Count; offset++)
+            {
+                int position = (session.Position + offset) % session.QuestionIds.Count;
+                if (!submitted.Contains(session.QuestionIds[position])) return position;
+            }
+            return -1;
+        }
+
+        private static void RememberCurrentDraft(Session session)
+        {
+            if (session.OtherDrafts == null) session.OtherDrafts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            if (session.Draft.Count > 0 && session.Position < session.QuestionIds.Count)
+                session.OtherDrafts[session.QuestionIds[session.Position]] = session.Draft;
+        }
+
+        private static void RestoreCurrentDraft(Session session)
+        {
+            session.Draft = new List<string>();
+            if (session.Completed || session.OtherDrafts == null) return;
+            string id = session.QuestionIds[session.Position];
+            List<string> selected;
+            if (session.OtherDrafts.TryGetValue(id, out selected))
+            {
+                session.Draft = selected;
+                session.OtherDrafts.Remove(id);
+            }
+        }
+
         public static void Submit(AppState state, Session session, Bank bank, List<string> selected)
         {
             if (state == null) throw new ArgumentNullException("state");
             if (session != null && session.FeedbackPending) throw new InvalidOperationException("请先查看本题评分，再进入下一题。");
             if (session == null || session.Completed) throw new InvalidOperationException("本次答题已结算，不能重复提交。");
-            if (session.Attempts == null || session.Attempts.Count != session.Position) throw new InvalidOperationException("答题进度异常，不能重复提交。");
             Question question = Current(bank, session);
-            if (session.Attempts.Any(a => a.QuestionId == question.Id)) throw new InvalidOperationException("此题已经提交过。");
+            if (HasSubmitted(session, question.Id)) throw new InvalidOperationException("此题已经提交过。");
+
+            RecordAttempt(state, session, bank, CreateAttempt(question, selected));
+            if (session.OtherDrafts != null) session.OtherDrafts.Remove(question.Id);
+            int nextPosition = NextUnsubmittedPosition(session);
+            session.Completed = nextPosition < 0;
+            session.Position = session.Completed ? session.QuestionIds.Count : nextPosition;
+            session.FeedbackPending = ImmediateScoring(state);
+            session.FeedbackQuestionId = session.FeedbackPending ? question.Id : null;
+            if (session.FeedbackPending) session.Draft = new List<string>();
+            else RestoreCurrentDraft(session);
+        }
+
+        private static Attempt CreateAttempt(Question question, List<string> selected)
+        {
             HashSet<string> choices = new HashSet<string>((selected ?? new List<string>()).Select(s => (s ?? "").Trim().ToUpperInvariant()), StringComparer.Ordinal);
             if (choices.Count == 0) throw new ArgumentException("请先选择答案。");
             if (choices.Any(id => !question.Options.Any(o => o.Id == id))) throw new ArgumentException("所选答案中包含无效选项。");
             if (question.Answers.Count == 1 && choices.Count != 1) throw new ArgumentException("单选题只能选择一个答案。");
-            List<string> ordered = question.Options.Where(o => choices.Contains(o.Id)).Select(o => o.Id).ToList();
-            bool correct = choices.SetEquals(question.Answers);
-            session.Attempts.Add(new Attempt { QuestionId = question.Id, Selected = ordered, Correct = correct });
-            if (!correct)
+            return new Attempt
             {
-                WrongRecord wrong = state.Wrongs.FirstOrDefault(w => w.BankId == bank.Id && w.QuestionId == question.Id);
+                QuestionId = question.Id,
+                Selected = question.Options.Where(o => choices.Contains(o.Id)).Select(o => o.Id).ToList(),
+                Correct = choices.SetEquals(question.Answers)
+            };
+        }
+
+        private static void RecordAttempt(AppState state, Session session, Bank bank, Attempt attempt)
+        {
+            session.Attempts.Add(attempt);
+            if (!attempt.Correct)
+            {
+                WrongRecord wrong = state.Wrongs.FirstOrDefault(w => w.BankId == bank.Id && w.QuestionId == attempt.QuestionId);
                 if (wrong == null)
                 {
-                    wrong = new WrongRecord { BankId = bank.Id, QuestionId = question.Id };
+                    wrong = new WrongRecord { BankId = bank.Id, QuestionId = attempt.QuestionId };
                     state.Wrongs.Add(wrong);
                 }
                 if (wrong.Count < Int32.MaxValue) wrong.Count++;
-                wrong.LastSelected = ordered.ToList();
+                wrong.LastSelected = attempt.Selected.ToList();
                 wrong.LastAt = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
             }
-            session.Position++;
-            session.Draft = new List<string>();
-            session.Completed = session.Position == session.QuestionIds.Count;
-            session.FeedbackPending = state.ImmediateScoring;
+        }
+
+        public static void Finish(AppState state, Session session, Bank bank)
+        {
+            if (state == null || session == null || bank == null || bank.Id != session.BankId)
+                throw new InvalidOperationException("答题进度与题库不匹配。");
+            var drafts = session.OtherDrafts == null
+                ? new Dictionary<string, List<string>>(StringComparer.Ordinal)
+                : new Dictionary<string, List<string>>(session.OtherDrafts, StringComparer.Ordinal);
+            if (!session.FeedbackPending && !session.Completed && session.Draft.Count > 0)
+                drafts[session.QuestionIds[session.Position]] = session.Draft;
+            var questions = bank.Questions.ToDictionary(question => question.Id, StringComparer.Ordinal);
+            var submitted = new HashSet<string>(session.Attempts.Select(attempt => attempt.QuestionId), StringComparer.Ordinal);
+            var pendingAttempts = new List<Attempt>();
+            foreach (string id in session.QuestionIds)
+            {
+                List<string> selected;
+                if (!submitted.Contains(id) && drafts.TryGetValue(id, out selected) && selected.Count > 0)
+                    pendingAttempts.Add(CreateAttempt(questions[id], selected));
+            }
+            foreach (Attempt attempt in pendingAttempts) RecordAttempt(state, session, bank, attempt);
+            session.Completed = true;
+            session.FeedbackPending = false;
+            session.FeedbackQuestionId = null;
+            session.Draft.Clear();
+            if (session.OtherDrafts != null) session.OtherDrafts.Clear();
         }
 
         public static Question Displayed(Bank bank, Session session)
         {
             if (session == null || !session.FeedbackPending) return Current(bank, session);
-            if (bank == null || bank.Id != session.BankId || session.Position < 1 || session.Attempts == null || session.Attempts.Count != session.Position)
+            if (bank == null || bank.Id != session.BankId || session.QuestionIds == null || session.Attempts == null)
                 throw new InvalidOperationException("本题评分进度无效。");
-            string id = session.QuestionIds[session.Position - 1];
+            int position = DisplayedPosition(session);
+            if (position < 0 || position >= session.QuestionIds.Count) throw new InvalidOperationException("本题评分进度无效。");
+            string id = session.QuestionIds[position];
             Question question = bank.Questions.FirstOrDefault(q => q.Id == id);
             if (question == null) throw new InvalidOperationException("本题评分中的题目已不存在。");
             return question;
@@ -494,8 +644,10 @@ namespace Chooser
 
         public static void AdvanceFeedback(Session session)
         {
-            if (session == null || !session.FeedbackPending || session.Position < 1) throw new InvalidOperationException("当前没有待查看的评分。");
+            if (session == null || !session.FeedbackPending) throw new InvalidOperationException("当前没有待查看的评分。");
             session.FeedbackPending = false;
+            session.FeedbackQuestionId = null;
+            RestoreCurrentDraft(session);
         }
 
         public static int Score(Session session)
@@ -504,13 +656,14 @@ namespace Chooser
         }
     }
 
-    public sealed class Store
+    public class Store
     {
-        private const long MaxStateBytes = 256L * 1024L * 1024L;
-        public string DirectoryPath { get; private set; }
-        public string LoadWarning { get; private set; }
-        private string StatePath { get { return Path.Combine(DirectoryPath, "state.json"); } }
-        private string BackupPath { get { return StatePath + ".bak"; } }
+        internal const long MaxStateBytes = 256L * 1024L * 1024L;
+        public string DirectoryPath { get; protected set; }
+        public string LoadWarning { get; protected set; }
+        protected string StatePath { get { return Path.Combine(DirectoryPath, "state.json"); } }
+        protected string BackupPath { get { return StatePath + ".bak"; } }
+        public virtual bool HasSnapshot { get { return File.Exists(StatePath) || File.Exists(BackupPath); } }
 
         public Store(string directory)
         {
@@ -519,7 +672,7 @@ namespace Chooser
             LoadWarning = "";
         }
 
-        public AppState Load()
+        public virtual AppState Load()
         {
             LoadWarning = "";
             if (!File.Exists(StatePath) && !File.Exists(BackupPath)) return new AppState();
@@ -552,11 +705,23 @@ namespace Chooser
             throw new IOException("本地缓存无法读取，且没有可用备份。为保护数据，程序未覆盖原文件。缓存位置：" + DirectoryPath, primaryError);
         }
 
-        public void Save(AppState state)
+        public virtual void Save(AppState state)
         {
-            Validate(state);
             Directory.CreateDirectory(DirectoryPath);
-            string temporary = Path.Combine(DirectoryPath, "state-" + Guid.NewGuid().ToString("N") + ".tmp");
+            WriteFile(StatePath, BackupPath, state);
+        }
+
+        public virtual void Flush() { }
+
+        public void Export(string path, AppState state)
+        {
+            WriteFile(Path.GetFullPath(path), null, state);
+        }
+
+        private static void WriteFile(string path, string backup, AppState state)
+        {
+            ValidateState(state);
+            string temporary = Path.Combine(Path.GetDirectoryName(path), "state-" + Guid.NewGuid().ToString("N") + ".tmp");
             try
             {
                 using (FileStream stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
@@ -567,8 +732,8 @@ namespace Chooser
                     stream.Flush(true);
                 }
                 // Replace is atomic on the local Windows filesystem and preserves the prior snapshot.
-                if (File.Exists(StatePath)) File.Replace(temporary, StatePath, BackupPath, true);
-                else File.Move(temporary, StatePath);
+                if (File.Exists(path)) File.Replace(temporary, path, backup, true);
+                else File.Move(temporary, path);
             }
             finally
             {
@@ -583,14 +748,18 @@ namespace Chooser
 
         private static AppState Read(string path)
         {
-            if (new FileInfo(path).Length > MaxStateBytes) throw new SerializationException("缓存文件超过 256 MB，无法读取。");
-            AppState state;
-            using (FileStream stream = File.OpenRead(path)) state = Serializer().ReadObject(stream) as AppState;
-            Validate(state);
+            using (FileStream stream = File.OpenRead(path)) return ReadSnapshot(stream);
+        }
+
+        internal static AppState ReadSnapshot(Stream stream)
+        {
+            if (stream.Length > MaxStateBytes) throw new SerializationException("缓存文件超过 256 MB，无法读取。");
+            var state = Serializer().ReadObject(stream) as AppState;
+            ValidateState(state);
             return state;
         }
 
-        private static void Validate(AppState state)
+        public static void ValidateState(AppState state)
         {
             if (state == null || state.Banks == null || state.Wrongs == null) throw new SerializationException("缓存缺少题库或错题记录。");
             if (Double.IsNaN(state.Zoom) || Double.IsInfinity(state.Zoom) || state.Zoom < .5 || state.Zoom > 3) state.Zoom = 1;
@@ -624,32 +793,70 @@ namespace Chooser
                     throw new SerializationException("缓存错题中的最近作答选项无效。");
             }
             if (state.Wrongs.GroupBy(w => w.BankId + ":" + w.QuestionId).Any(g => g.Count() > 1)) throw new SerializationException("缓存错题记录重复。");
+            if (state.AllowPreviousQuestion) state.ImmediateScoring = false;
+            Bank rangeBank = state.Banks.FirstOrDefault(b => b.Id == state.RangeBankId);
+            if (rangeBank == null || state.RangeStart < 1 || state.RangeEnd < state.RangeStart || state.RangeEnd > rangeBank.Questions.Count)
+            {
+                state.RangeBankId = null;
+                state.RangeStart = state.RangeEnd = 0;
+            }
             Session session = state.Active;
             if (session == null) return;
             if (String.IsNullOrWhiteSpace(session.Mode)) session.Mode = "顺序练习";
             Bank activeBank = state.Banks.FirstOrDefault(b => b.Id == session.BankId);
             if (activeBank == null || session.QuestionIds == null || session.QuestionIds.Count == 0 || session.QuestionIds.Distinct().Count() != session.QuestionIds.Count || session.Attempts == null)
                 throw new SerializationException("缓存答题进度不完整。");
-            if (session.Position < 0 || session.Position > session.QuestionIds.Count || session.Attempts.Count != session.Position || (!session.Completed && session.Position == session.QuestionIds.Count))
+            if (session.Position < 0 || session.Position > session.QuestionIds.Count || (!session.Completed && session.Position == session.QuestionIds.Count))
                 throw new SerializationException("缓存答题位置无效。");
-            if (session.QuestionIds.Any(id => !activeBank.Questions.Any(q => q.Id == id))) throw new SerializationException("缓存进度中的题目不存在。");
-            for (int i = 0; i < session.Attempts.Count; i++)
+            var questions = activeBank.Questions.ToDictionary(q => q.Id, StringComparer.Ordinal);
+            var roundIds = new HashSet<string>(session.QuestionIds, StringComparer.Ordinal);
+            if (roundIds.Any(id => id == null || !questions.ContainsKey(id))) throw new SerializationException("缓存进度中的题目不存在。");
+            var submitted = new HashSet<string>(StringComparer.Ordinal);
+            foreach (Attempt attempt in session.Attempts)
             {
-                Attempt attempt = session.Attempts[i];
-                if (attempt == null || attempt.QuestionId != session.QuestionIds[i] || attempt.Selected == null || attempt.Selected.Count == 0)
-                    throw new SerializationException("缓存作答记录顺序无效。");
-                Question question = activeBank.Questions.First(q => q.Id == attempt.QuestionId);
-                if (attempt.Selected.Any(a => !question.Options.Any(o => o.Id == a)) || attempt.Selected.Distinct().Count() != attempt.Selected.Count)
+                if (attempt == null || !roundIds.Contains(attempt.QuestionId) || !submitted.Add(attempt.QuestionId) || attempt.Selected == null || attempt.Selected.Count == 0)
+                    throw new SerializationException("缓存作答记录无效或重复。");
+                Question question = questions[attempt.QuestionId];
+                if (!ValidSelection(question, attempt.Selected))
                     throw new SerializationException("缓存作答选项无效。");
                 if (attempt.Correct != new HashSet<string>(attempt.Selected).SetEquals(question.Answers)) throw new SerializationException("缓存成绩校验失败。");
             }
+            if (!session.Completed && submitted.Count == roundIds.Count) throw new SerializationException("缓存答题结算状态无效。");
+            if (session.MarkedQuestionIds == null) session.MarkedQuestionIds = new List<string>();
+            if (session.MarkedQuestionIds.Any(id => !roundIds.Contains(id)) || session.MarkedQuestionIds.Distinct().Count() != session.MarkedQuestionIds.Count)
+                throw new SerializationException("缓存题目标记无效或重复。");
             if (session.Draft == null) session.Draft = new List<string>();
-            if (session.FeedbackPending && (session.Position < 1 || session.Draft.Count != 0)) throw new SerializationException("缓存的本题评分进度无效。");
-            if (!session.Completed)
+            if (session.OtherDrafts == null) session.OtherDrafts = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+            string currentId = session.Position < session.QuestionIds.Count ? session.QuestionIds[session.Position] : null;
+            if (session.FeedbackPending)
             {
-                Question current = activeBank.Questions.First(q => q.Id == session.QuestionIds[session.Position]);
-                if (session.Draft.Any(a => !current.Options.Any(o => o.Id == a))) throw new SerializationException("缓存草稿答案无效。");
+                // Older caches advance Position before displaying feedback and do not store the question ID.
+                if (session.FeedbackQuestionId == null && session.Position > 0)
+                    session.FeedbackQuestionId = session.QuestionIds[session.Position - 1];
+                Attempt last = session.Attempts.LastOrDefault();
+                if (last == null || session.FeedbackQuestionId != last.QuestionId || session.Draft.Count != 0 ||
+                    (!session.Completed && submitted.Contains(currentId)))
+                    throw new SerializationException("缓存的本题评分进度无效。");
             }
+            else session.FeedbackQuestionId = null;
+
+            if (session.Completed && !session.FeedbackPending) session.Draft.Clear();
+            if (session.Draft.Count > 0 && (currentId == null || submitted.Contains(currentId) || !ValidSelection(questions[currentId], session.Draft)))
+                throw new SerializationException("缓存草稿答案无效。");
+            foreach (var draft in session.OtherDrafts)
+            {
+                if (session.Completed || !roundIds.Contains(draft.Key) || submitted.Contains(draft.Key) ||
+                    (!session.FeedbackPending && draft.Key == currentId) || draft.Value == null || draft.Value.Count == 0 ||
+                    !ValidSelection(questions[draft.Key], draft.Value))
+                    throw new SerializationException("缓存其他题目的草稿答案无效。");
+            }
+        }
+
+        private static bool ValidSelection(Question question, List<string> selected)
+        {
+            return (question.Answers.Count > 1 || selected.Count == 1) &&
+                selected.Distinct().Count() == selected.Count &&
+                selected.All(id => question.Options.Any(option => option.Id == id));
         }
     }
 }

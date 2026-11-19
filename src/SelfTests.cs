@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Chooser
 {
@@ -261,6 +262,100 @@ namespace Chooser
                     Check(loaded.Active.Attempts.Count == 1 && QuizEngine.Score(loaded.Active) == 1, "未答题目进入提前结算成绩。");
                     Check(loaded.Wrongs.Count == 0, "未答题目进入错题本。");
                     Reject(delegate { QuizEngine.Submit(loaded, loaded.Active, loaded.Banks.Single(), Answer("B")); }, "提前结算后仍可提交。");
+                });
+
+                test("跳题与标记：分别保存草稿，跳回已提交题不会重复计错", delegate
+                {
+                    Bank bank = XmlQuiz.Parse(TwoQuestions, "navigation.xml");
+                    AppState state = State(bank);
+                    Session session = Session(state, bank, 1, 2);
+                    var store = new Store(Path.Combine(temporary, "navigation"));
+                    session.Draft = Answer("A");
+                    Check(QuizEngine.ToggleMark(session), "未添加题目标记。");
+                    QuizEngine.Jump(session, 1);
+                    session.Draft = Answer("A");
+                    store.Save(state);
+                    state = store.Load();
+                    bank = state.Banks.Single();
+                    session = state.Active;
+                    Check(session.Position == 1 && session.Draft.SequenceEqual(Answer("A")), "恢复时未保留第二题草稿。");
+                    Check(session.MarkedQuestionIds.SequenceEqual(new[] { session.QuestionIds[0] }), "重启丢失标记。");
+                    QuizEngine.Submit(state, session, bank, session.Draft);
+                    Check(!session.Completed && session.Position == 0 && session.Draft.SequenceEqual(Answer("A")), "末题提交后未回到未答题或丢失其草稿。");
+                    QuizEngine.Jump(session, 1);
+                    Check(QuizEngine.DisplayedAttempt(session).Selected.SequenceEqual(Answer("A")), "跳回已提交题未显示原答案。");
+                    Reject(delegate { QuizEngine.Submit(state, session, bank, Answer("B")); }, "已提交题可再次提交。");
+                    Check(state.Wrongs.Single().Count == 1, "返回导致重复统计错题。");
+                    Check(QuizEngine.MoveNext(session) && !QuizEngine.ToggleMark(session), "下一未答题或取消标记无效。");
+                    QuizEngine.Submit(state, session, bank, session.Draft);
+                    Check(session.Completed && QuizEngine.Score(session) == 1, "乱序答完未结算或总分错误。");
+                });
+
+                test("乱序立即评分恢复：当下一题位置为 0 时仍显示正确题目与分数", delegate
+                {
+                    Bank bank = XmlQuiz.Parse(TwoQuestions, "feedback.xml");
+                    AppState state = State(bank);
+                    state.ImmediateScoring = true;
+                    Session session = Session(state, bank, 1, 2);
+                    session.Draft = Answer("A");
+                    QuizEngine.Jump(session, 1);
+                    QuizEngine.Submit(state, session, bank, Answer("B"));
+                    Check(session.Position == 0 && session.FeedbackPending && QuizEngine.DisplayedPosition(session) == 1, "末题乱序提交后评分题号错误。");
+                    Reject(delegate { QuizEngine.Jump(session, 0); }, "允许跳转丢弃待查看评分。");
+                    state.AllowPreviousQuestion = true;
+                    var store = new Store(Path.Combine(temporary, "out-of-order-feedback"));
+                    store.Save(state);
+                    state = store.Load();
+                    bank = state.Banks.Single();
+                    session = state.Active;
+                    Check(!state.ImmediateScoring && session.FeedbackPending && QuizEngine.DisplayedAttempt(session).Correct, "互斥设置丢失已提交的即时评分。");
+                    QuizEngine.AdvanceFeedback(session);
+                    Check(session.Draft.SequenceEqual(Answer("A")), "离开即时评分时未恢复下一题草稿。");
+                    QuizEngine.Submit(state, session, bank, session.Draft);
+                    Check(session.Completed && !session.FeedbackPending && QuizEngine.Score(session) == 2, "上一题模式仍开启立即评分或总分错误。");
+                });
+
+                test("旧缓存兼容：无导航字段的 v1.4 待评分可以继续", delegate
+                {
+                    Bank bank = XmlQuiz.Parse(TwoQuestions, "legacy-feedback.xml");
+                    AppState state = State(bank);
+                    state.ImmediateScoring = true;
+                    Session session = Session(state, bank, 1, 2);
+                    QuizEngine.Submit(state, session, bank, Answer("A"));
+                    var store = new Store(Path.Combine(temporary, "legacy-feedback"));
+                    store.Save(state);
+                    string path = Path.Combine(store.DirectoryPath, "state.json");
+                    string json = File.ReadAllText(path);
+                    json = Regex.Replace(json, @",?""FeedbackQuestionId"":""[^""]*""", "");
+                    json = Regex.Replace(json, @",?""(?:OtherDrafts|MarkedQuestionIds)"":\[\]", "");
+                    File.WriteAllText(path, json, new UTF8Encoding(false));
+                    state = store.Load();
+                    session = state.Active;
+                    Check(!state.AllowPreviousQuestion && session.FeedbackPending && QuizEngine.DisplayedPosition(session) == 0, "旧设置或即时评分读取错误。");
+                    Check(QuizEngine.DisplayedAttempt(session).Correct && session.MarkedQuestionIds.Count == 0, "旧评分结果或默认标记错误。");
+                    QuizEngine.AdvanceFeedback(session);
+                    Check(session.Position == 1 && !session.FeedbackPending, "旧即时评分无法前进。");
+                });
+
+                test("提前交卷：提交各题已有草稿，保留范围并拒绝重复作答记录", delegate
+                {
+                    Bank bank = XmlQuiz.Parse(TwoQuestions, "draft-finish.xml");
+                    AppState state = State(bank);
+                    state.RangeBankId = bank.Id;
+                    state.RangeStart = state.RangeEnd = 2;
+                    Session session = Session(state, bank, 1, 2);
+                    session.Draft = Answer("A");
+                    QuizEngine.Jump(session, 1);
+                    session.Draft = Answer("A");
+                    QuizEngine.Finish(state, session, bank);
+                    Check(session.Completed && session.Attempts.Count == 2 && QuizEngine.Score(session) == 1, "跳题后提前交卷漏交草稿。");
+                    Check(state.Wrongs.Single().Count == 1 && session.OtherDrafts.Count == 0, "草稿交卷未清理或错题计次错误。");
+                    var store = new Store(Path.Combine(temporary, "draft-finish"));
+                    store.Save(state);
+                    AppState restored = store.Load();
+                    Check(restored.RangeBankId == bank.Id && restored.RangeStart == 2 && restored.RangeEnd == 2, "答题范围未保存。");
+                    restored.Active.Attempts.Add(restored.Active.Attempts[0]);
+                    Reject(delegate { store.Save(restored); }, "缓存接受重复作答记录。");
                 });
 
                 test("原子保存和备份恢复：主文件损坏可恢复并提示", delegate
