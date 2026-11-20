@@ -50,14 +50,14 @@ namespace Chooser
                     Check(!Find<TextBlock>().Any(t => t.Text == "选"), "页头残留选字。");
                     Check(Find<Border>().Any(b => b.Background is SolidColorBrush && ((SolidColorBrush)b.Background).Color.ToString() == "#FF008080" && b.Width == 36), "未找到青色勾选底图。");
                     Check(Find<System.Windows.Shapes.Path>().Any(p => p.Stroke == Brushes.White), "未找到白色勾选路径。");
-                    Render(root, "desktop-v1.6.1-help-home.png");
+                    Render(root, "desktop-v1.6.2-help-home.png");
                 });
                 Test("内置简明帮助可复制 AI 提示词、复制及下载示例", delegate {
                     Click("帮助");
                     Check(Field<string>("view") == "help", "未进入帮助页。");
                     Check(Find<TextBlock>().Any(t => t.Text == "题库 XML 写作指南"), "帮助标题不正确。");
                     var guide = (XmlGuideDocument)typeof(MainWindow).GetMethod("ReadGuide", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
-                    Check(guide.Version == "1.6.1" && guide.Sections.Select(section => section.Title).SequenceEqual(new[] { "从示例开始", "填写选项与答案", "保存并导入" }), "帮助版本或章节不完整。");
+                    Check(guide.Version == "1.6.2" && guide.Sections.Select(section => section.Title).SequenceEqual(new[] { "从示例开始", "填写选项与答案", "保存并导入" }), "帮助版本或章节不完整。");
                     Check(Find<Button>().Any(b => Equals(b.Content, "下载示例 XML")), "缺少下载示例入口。");
                     var exampleBox = Find<TextBox>().Single(t => System.Windows.Automation.AutomationProperties.GetName(t) == "从示例开始 XML 示例");
                     Check(exampleBox.IsReadOnly && XmlQuiz.Parse(exampleBox.Text, "short.xml").Questions.Count == 1, "帮助代码框应只读且包含可导入示例。");
@@ -82,7 +82,7 @@ namespace Chooser
                     Click("复制 AI CSV 提示词");
                     Check(Clipboard.Text == ((TextBox)prompt.Content).Text && Clipboard.Text.Contains("单选写 B，多选写 AC"), "CSV 提示词的复制和查看内容不一致。");
                     Check(Clipboard.Text.Contains(sample.Text.Replace("\r\n", "\n")), "CSV 提示词未包含完整示例。");
-                    Render(root, "desktop-v1.6.1-help.png");
+                    Render(root, "desktop-v1.6.2-help.png");
                 });
                 Test("下载 CSV 使用 Excel 可识别的 UTF-8 BOM 与 CRLF，XML 保持原格式", delegate {
                     Directory.CreateDirectory(temporary);
@@ -113,8 +113,8 @@ namespace Chooser
                     Call("ShowHelp"); Click("返回首页"); Check(Field<string>("view") == "home", "无法返回首页。");
                 });
                 Test("发布 EXE 版本及帮助资源已内置，无需外置文件", delegate {
-                    string exe = Path.Combine(root, "选择器单文件版v1.6.1.exe");
-                    Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.6.1.0", "发布版本号未更新。");
+                    string exe = Path.Combine(root, "选择器单文件版v1.6.2.exe");
+                    Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.6.2.0", "发布版本号未更新。");
                     var assembly = Assembly.ReflectionOnlyLoadFrom(exe);
                     string[] names = assembly.GetManifestResourceNames();
                     Check(names.Contains("xml-guide.json") && names.Contains("example.xml") && names.Contains("example.csv") && names.Contains("default.xml"), "单文件 EXE 缺少帮助资源。");
@@ -130,7 +130,7 @@ namespace Chooser
                 if (window != null) window.Close();
                 if (Directory.Exists(temporary)) Directory.Delete(temporary, true);
                 report.Add("结果：" + passed + " 项通过；" + (result == 0 ? "0 项失败。" : "存在失败。"));
-                File.WriteAllLines(Path.Combine(root, "tests", "desktop-v1.6.1-help-report.txt"), report, new UTF8Encoding(true));
+                File.WriteAllLines(Path.Combine(root, "tests", "desktop-v1.6.2-help-report.txt"), report, new UTF8Encoding(true));
             }
             return result;
         }

@@ -3,7 +3,7 @@ $rootPath = $PSScriptRoot
 $frameworkPath = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319'
 $compilerPath = Join-Path $frameworkPath 'csc.exe'
 $wpfPath = Join-Path $frameworkPath 'WPF'
-$outputPath = Join-Path $rootPath '选择器单文件版v1.6.1.exe'
+$outputPath = Join-Path $rootPath '选择器单文件版v1.6.2.exe'
 $sourceFiles = @('src\Program.cs', 'src\Core.cs', 'src\CsvQuiz.cs', 'src\PortableStore.cs', 'src\MainWindow.cs', 'src\SelfTests.cs') | ForEach-Object { Join-Path $rootPath $_ }
 $compilerArguments = @(
     '/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output',

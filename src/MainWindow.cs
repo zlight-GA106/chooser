@@ -80,7 +80,7 @@ namespace Chooser
             Drop += delegate(object s, DragEventArgs e) {
                 if (!CanImport) return;
                 var paths = e.Data.GetData(DataFormats.FileDrop) as string[];
-                if (paths != null) ImportFiles(paths);
+                if (paths != null) ImportFiles(paths, ShowManage);
             };
             PreviewKeyDown += OnKey;
             Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) {
@@ -222,7 +222,7 @@ namespace Chooser
                 if (resource != null) return (XmlGuideDocument)new DataContractJsonSerializer(typeof(XmlGuideDocument)).ReadObject(resource);
             }
             // Core-only verification builds do not embed release resources.
-            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.6.1", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "题库用 <quiz> 包住所有题目。每题填写题干、至少两个选项和答案，保存为 UTF-8 的 .xml 文件。" } } };
+            return new XmlGuideDocument { Title = "题库 XML 写作指南", Version = "1.6.2", ExampleFile = "example.xml", Sections = new List<XmlGuideSection> { new XmlGuideSection { Title = "XML 题库", Text = "题库用 <quiz> 包住所有题目。每题填写题干、至少两个选项和答案，保存为 UTF-8 的 .xml 文件。" } } };
         }
         static string ReadExample() { return ReadHelpResource("example.xml"); }
         static string ReadCsvExample() { return ReadHelpResource("example.csv"); }
@@ -408,6 +408,13 @@ namespace Chooser
                 bankPicker.Items.Add(new ComboBoxItem { Content = bank.Name + "  ·  " + bank.Questions.Count + " 题", Tag = bank.Id });
             }
             inner.Children.Add(bankPicker);
+            var importButton = Action("导入 CSV / XML 题库", OpenImportFromHome, false);
+            importButton.Background = Color("Tint");
+            importButton.HorizontalAlignment = HorizontalAlignment.Left;
+            importButton.Padding = new Thickness(16, 8, 16, 8);
+            importButton.Margin = new Thickness(0, 0, 0, 18);
+            importButton.ToolTip = "输入设置密码后选择题库文件（Ctrl+O）";
+            inner.Children.Add(importButton);
             var examFields = new Grid();
             for (int column = 0; column < 3; column++) examFields.ColumnDefinitions.Add(new ColumnDefinition());
             rangeStartBox = AddExamField(examFields, 0, "起始题号");
@@ -466,7 +473,7 @@ namespace Chooser
             {
                 rangeStartBox.Clear();
                 rangeEndBox.Clear();
-                ShowExamError("请在设置的题库管理中导入或新建题库。");
+                ShowExamError("请先导入题库。");
                 return;
             }
             int first, last;
@@ -496,6 +503,20 @@ namespace Chooser
         bool CanImport { get { return settingsUnlocked && (view == "settings" || view == "manage" || view == "bank"); } }
         void OpenSettings()
         {
+            if (!AuthorizeSettings("输入设置密码", "进入设置")) return;
+            settingsUnlocked = true;
+            ShowSettings();
+        }
+
+        void OpenImportFromHome()
+        {
+            if (view != "home" || !AuthorizeSettings("输入设置密码以导入题库", "继续导入")) return;
+            var files = ChooseBankFiles();
+            if (files != null) ImportFiles(files, ShowHome);
+        }
+
+        bool AuthorizeSettings(string prompt, string confirmText)
+        {
             var dialog = new Window {
                 Owner = this, Title = "设置密码", Width = 390, SizeToContent = SizeToContent.Height,
                 ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -503,7 +524,7 @@ namespace Chooser
             };
             dialog.Resources.MergedDictionaries.Add(Resources);
             var body = new StackPanel { Margin = new Thickness(24) };
-            body.Children.Add(Label("输入设置密码"));
+            body.Children.Add(Label(prompt));
             var password = new PasswordBox {
                 MaxLength = 64, FontSize = 16 * Z, Padding = new Thickness(10),
                 Foreground = Color("Ink"), Background = Color("Surface"), BorderBrush = Color("Line")
@@ -513,7 +534,7 @@ namespace Chooser
             var error = Text("", 13, "Error");
             body.Children.Add(error);
             var actions = Actions();
-            var confirm = Action("进入设置", delegate {
+            var confirm = Action(confirmText, delegate {
                 if (VerifySettingsPassword(password.Password)) { dialog.DialogResult = true; return; }
                 error.Text = "密码不正确，请重试。";
                 password.Clear();
@@ -527,9 +548,7 @@ namespace Chooser
             body.Children.Add(actions);
             dialog.Content = body;
             dialog.Loaded += delegate { password.Focus(); };
-            if (dialog.ShowDialog() != true) return;
-            settingsUnlocked = true;
-            ShowSettings();
+            return dialog.ShowDialog() == true;
         }
 
         static bool VerifySettingsPassword(string value)
@@ -597,16 +616,22 @@ namespace Chooser
         void PickFiles()
         {
             if (!CanImport) return;
+            var files = ChooseBankFiles();
+            if (files != null) ImportFiles(files, ShowManage);
+        }
+
+        string[] ChooseBankFiles()
+        {
             var dialog = new OpenFileDialog {
-                Title = "导入题库",
-                Filter = "题库文件 (*.xml;*.csv)|*.xml;*.csv|XML 题库 (*.xml)|*.xml|CSV 题库 (*.csv)|*.csv",
+                Title = "导入 CSV / XML 题库",
+                Filter = "题库文件 (*.csv;*.xml)|*.csv;*.xml|CSV 题库 (*.csv)|*.csv|XML 题库 (*.xml)|*.xml",
                 Multiselect = true
             };
-            if (dialog.ShowDialog(this) == true) ImportFiles(dialog.FileNames);
+            return dialog.ShowDialog(this) == true ? dialog.FileNames : null;
         }
-        void ImportFiles(string[] paths)
+
+        void ImportFiles(string[] paths, Action refresh)
         {
-            if (!CanImport) return;
             int imported = 0, duplicate = 0; var errors = new List<string>();
             var candidate = CloneState(data);
             foreach (var path in paths)
@@ -626,9 +651,16 @@ namespace Chooser
                 }
                 catch (Exception ex) { errors.Add(Path.GetFileName(path) + "：" + ex.Message); }
             }
-            try { CommitState(candidate); }
-            catch (Exception error) { MessageBox.Show(this, "导入未能保存，原有题库和记录未更改。\n" + error.Message, "导入失败", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            ShowManage();
+            if (imported > 0 || duplicate > 0)
+            {
+                try { CommitState(candidate); }
+                catch (Exception error)
+                {
+                    MessageBox.Show(this, "导入未能保存，原有题库和记录未更改。\n" + error.Message, "导入失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                refresh();
+            }
             string summary = "已导入 " + imported + " 个题库" + (duplicate > 0 ? "；" + duplicate + " 个已存在，直接使用缓存" : "") + "。";
             if (errors.Count > 0) summary += "\n\n以下文件未导入：\n" + String.Join("\n", errors);
             MessageBox.Show(this, summary, "导入题库", MessageBoxButton.OK, errors.Count > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
@@ -1040,7 +1072,7 @@ namespace Chooser
             if (!settingsUnlocked) { ShowHome(); return; }
             Begin("manage");
             var inner = Heading("题库管理", "");
-            var actions = new WrapPanel(); actions.Children.Add(Action("返回设置", ShowSettings, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 XML / CSV", PickFiles, false));
+            var actions = new WrapPanel(); actions.Children.Add(Action("返回设置", ShowSettings, false)); actions.Children.Add(Action("新建题库", delegate { OpenBankEditor(null); }, true)); actions.Children.Add(Action("导入 CSV / XML 题库", PickFiles, false));
             actions.Children.Add(Action("备份全部数据", ExportBackup, false)); actions.Children.Add(Action("恢复数据备份", RestoreBackup, false)); inner.Children.Add(actions);
             var search = new TextBox { Text = managementQuery, FontSize = 15 * Z, Margin = new Thickness(0, 14, 0, 0) };
             System.Windows.Automation.AutomationProperties.SetName(search, "搜索题库名称或题干");
@@ -1290,7 +1322,12 @@ namespace Chooser
             // Modal dialogs own their keyboard input.
             if (OwnedWindows.Count > 0) return;
             if (actualKey == Key.F1 && Keyboard.Modifiers == ModifierKeys.None) { ShowHelp(); e.Handled = true; return; }
-            if (Keyboard.Modifiers == ModifierKeys.Control && actualKey == Key.O && CanImport) { PickFiles(); e.Handled = true; return; }
+            if (Keyboard.Modifiers == ModifierKeys.Control && actualKey == Key.O && (view == "home" || CanImport))
+            {
+                if (view == "home") OpenImportFromHome(); else PickFiles();
+                e.Handled = true;
+                return;
+            }
             if (view != "quiz" || data.Active == null || (data.Active.Completed && !data.Active.FeedbackPending) || Keyboard.Modifiers != ModifierKeys.None) return;
             if (actualKey == Key.Enter)
             {

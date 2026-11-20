@@ -114,10 +114,10 @@ namespace Chooser
                     Check(state.Banks.Count == count - 1 && !store.Load().Banks.Any(b => b.Id == bank.Id), "删除未持久化。");
                     Call("ShowManage"); Check(AllText().Contains("分页题库"), "删除影响其他题库。");
                 });
-                Test("发布版本更新至 1.6.1，帮助与图标保持可用", delegate {
-                    string exe = Path.Combine(root, "选择器单文件版v1.6.1.exe"); Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.6.1.0", "发布版本错误。");
+                Test("发布版本更新至 1.6.2，帮助与图标保持可用", delegate {
+                    string exe = Path.Combine(root, "选择器单文件版v1.6.2.exe"); Check(AssemblyName.GetAssemblyName(exe).Version.ToString() == "1.6.2.0", "发布版本错误。");
                     var resources = Assembly.ReflectionOnlyLoadFrom(exe).GetManifestResourceNames(); Check(resources.Contains("default.xml") && resources.Contains("xml-guide.json") && resources.Contains("example.xml") && resources.Contains("example.csv"), "发布程序缺少内置资源。");
-                    Call("ShowHelp"); Check(AllText().Contains("题库 XML 写作指南") && AllText().Contains("CSV 导入指南") && AllText().Contains("选择器 v1.6.1"), "指南版本未同步。");
+                    Call("ShowHelp"); Check(AllText().Contains("题库 XML 写作指南") && AllText().Contains("CSV 导入指南") && AllText().Contains("选择器 v1.6.2"), "指南版本未同步。");
                     Check(!AllText().Split('\n').Contains("选"), "旧字图标复现。");
                 });
             }

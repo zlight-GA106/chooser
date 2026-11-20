@@ -69,10 +69,23 @@ namespace Chooser
                     Render("integration-home");
                 });
 
+                Test("首页可见 CSV / XML 导入入口，取消验证后仍保持首页和原题库", delegate
+                {
+                    var import = Button("导入 CSV / XML 题库");
+                    Check(import.Visibility == Visibility.Visible, "首页导入按钮不可见。");
+                    string selected = state.SelectedBankId;
+                    string[] bankIds = state.Banks.Select(bank => bank.Id).ToArray();
+                    OpenAndCheckPassword(import, "继续导入", null);
+                    Check(Field<string>("view") == "home" && !Field<bool>("settingsUnlocked"), "取消导入验证后未回到锁定的首页。");
+                    Check(state.SelectedBankId == selected && state.Banks.Select(bank => bank.Id).SequenceEqual(bankIds), "取消导入验证改变了题库。");
+                    var saved = store.Load();
+                    Check(saved.SelectedBankId == selected && saved.Banks.Select(bank => bank.Id).SequenceEqual(bankIds), "取消导入验证改变了已保存的题库。");
+                });
+
                 Test("设置密码拒绝错误输入，考试选项移出设置", delegate
                 {
                     string password = Environment.GetEnvironmentVariable("CHOOSER_TEST_SETTINGS_PASSWORD");
-                    bool authenticated = OpenSettingsAndCheckPassword(password);
+                    bool authenticated = OpenAndCheckPassword(Button("设置"), "进入设置", password);
                     if (!authenticated)
                     {
                         Check(Field<string>("view") == "home", "取消密码后进入设置。");
@@ -296,7 +309,7 @@ namespace Chooser
             Call("ShowSettings");
         }
 
-        private static bool OpenSettingsAndCheckPassword(string validPassword)
+        private static bool OpenAndCheckPassword(Button opener, string confirmLabel, string validPassword)
         {
             new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle();
             Exception failure = null;
@@ -308,7 +321,7 @@ namespace Chooser
                     dialog = Application.Current.Windows.Cast<Window>().Single(candidate => candidate != window && candidate.Title == "设置密码");
                     var controls = Descendants((DependencyObject)dialog.Content).ToList();
                     PasswordBox field = controls.OfType<PasswordBox>().Single();
-                    Button submit = controls.OfType<Button>().Single(button => Equals(button.Content, "进入设置"));
+                    Button submit = controls.OfType<Button>().Single(button => Equals(button.Content, confirmLabel));
                     field.Password = "invalid-classroom-settings-password";
                     submit.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
                     Check(dialog.IsVisible && !Field<bool>("settingsUnlocked") && field.Password.Length == 0 &&
@@ -328,7 +341,7 @@ namespace Chooser
                     else foreach (Window remaining in Application.Current.Windows.Cast<Window>().Where(w => w != window && w.Title == "设置密码").ToList()) remaining.Close();
                 }
             }));
-            Click(Button("设置"));
+            Click(opener);
             if (failure != null) throw new InvalidOperationException("设置密码窗口验证失败。", failure);
             return !String.IsNullOrEmpty(validPassword);
         }
